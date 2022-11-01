@@ -141,7 +141,6 @@ async def add_entity_handler(
     create_request: data.CreateEntityRequest = Body(...),
 ) -> data.EntityResponse:
     web3_signature = request.state.signature
-
     try:
         create_entity = data.Entity.parse_obj(create_request)
         title, tags, content = await actions.parse_entity_to_entry(
@@ -164,32 +163,21 @@ async def add_entity_handler(
         logger.error(e)
         raise HTTPException(status_code=500)
 
-    support_ercs, proxy, deployed_contracts = await actions.parse_tags_to_entity_fields(
-        response.tags
-    )
+    entity_response = await actions.parse_entry_to_entity(entry=response)
 
-    return data.EntityResponse(
-        collection_id=collection_id,
-        entity_id=response.id,
-        address=create_request.address,
-        blockchain=create_request.blockchain,
-        title=title,
-        entity_type=create_request.entity_type.value,
-        content=json.loads(response.content) if response.content is not None else {},
-        support_ercs=support_ercs,
-        proxy=proxy,
-        deployed_contracts=deployed_contracts,
-    )
+    return entity_response
 
 
-@app.delete("/collections/{collection_id}/entities/{entity_id}")
+@app.delete(
+    "/collections/{collection_id}/entities/{entity_id}",
+    response_model=data.EntityResponse,
+)
 async def delete_entity_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
     entity_id: uuid.UUID = Path(...),
-):
+) -> data.EntityResponse:
     web3_signature = request.state.signature
-
     try:
         response: BugoutJournalEntry = bc.delete_entry(
             token=web3_signature,
@@ -204,8 +192,6 @@ async def delete_entity_handler(
         logger.error(e)
         raise HTTPException(status_code=500)
 
-    support_ercs, proxy, deployed_contracts = await actions.parse_tags_to_entity_fields(
-        response.tags
-    )
-    print(response)
-    return {}
+    entity_response = await actions.parse_entry_to_entity(entry=response)
+
+    return entity_response

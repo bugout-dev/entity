@@ -80,10 +80,10 @@ class Entity(CreateEntityRequest):
 class EntityResponse(BaseModel):
     entity_id: uuid.UUID
     collection_id: uuid.UUID
-    address: str
-    blockchain: str
-    title: str
-    entity_type: str
+    address: Optional[str] = None
+    blockchain: Optional[str] = None
+    title: Optional[str] = None
+    entity_type: Optional[str] = None
     content: Dict[str, Any]
 
     # Smartcontract type

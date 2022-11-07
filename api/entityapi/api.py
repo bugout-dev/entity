@@ -7,7 +7,7 @@ import time
 import uuid
 from typing import Any, Collection, Dict, List, Optional
 
-from bugout.data import BugoutJournalEntry
+from bugout.data import BugoutJournalEntry, BugoutJournalEntries
 from bugout.exceptions import BugoutResponseException
 from fastapi import (
     BackgroundTasks,
@@ -157,7 +157,9 @@ async def add_entity_handler(
             headers={BUGOUT_APPLICATION_ID_HEADER: ENTITY_APPLICATION_ID},
         )
 
-        entity_response = actions.parse_entry_to_entity(entry=response)
+        entity_response = actions.parse_entry_to_entity(
+            entry=response, collection_id=str(collection_id)
+        )
 
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
@@ -168,11 +170,55 @@ async def add_entity_handler(
     return entity_response
 
 
-@app.get("/collections/{collection_id}/entities")
+@app.post("/collections/{collection_id}/bulk", response_model=data.EntitiesResponse)
+async def add_entity_bulk_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+    create_request: List[data.Entity] = Body(...),
+) -> data.EntitiesResponse:
+    web3_signature = request.state.signature
+    try:
+        create_entries = []
+        for entity in create_request:
+            title, tags, content = actions.parse_entity_to_entry(create_entity=entity)
+            create_entries.append(
+                {
+                    "title": title,
+                    "tags": tags,
+                    "content": json.dumps(content),
+                    "context_type": "entity",
+                }
+            )
+
+        response: BugoutJournalEntries = bc.create_entries_pack(
+            token=web3_signature,
+            journal_id=collection_id,
+            entries=create_entries,
+            auth_type="web3",
+            headers={BUGOUT_APPLICATION_ID_HEADER: ENTITY_APPLICATION_ID},
+        )
+
+        entities_response = data.EntitiesResponse(entities=[])
+        for entry in response.entries:
+            entity_response = actions.parse_entry_to_entity(
+                entry=entry, collection_id=str(collection_id)
+            )
+            entities_response.entities.append(entity_response)
+
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return entities_response
+
+
+@app.get("/collections/{collection_id}/entities", response_model=data.EntitiesResponse)
 async def get_entities_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
-):
+) -> data.EntitiesResponse:
     web3_signature = request.state.signature
     try:
         response = bc.get_entries(
@@ -184,8 +230,10 @@ async def get_entities_handler(
 
         entities_response = data.EntitiesResponse(entities=[])
         for entry in response.entries:
-            entity = actions.parse_entry_to_entity(entry=entry)
-            entities_response.entities.append(entity)
+            entity_response = actions.parse_entry_to_entity(
+                entry=entry, collection_id=str(collection_id)
+            )
+            entities_response.entities.append(entity_response)
 
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)

@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from distutils import util
 from typing import Any, Collection, Dict, List, Optional, Tuple, Union, cast
 
@@ -69,13 +70,14 @@ def parse_entity_to_entry(
     return title, tags, content
 
 
-def parse_entry_to_entity(entry: BugoutJournalEntry) -> data.EntityResponse:
+def parse_entry_to_entity(
+    entry: BugoutJournalEntry, collection_id: str
+) -> data.EntityResponse:
     """
     Convert Bugout entry to entity response.
     """
-    if entry.journal_url is None:
-        raise Exception(f"Journal id of entry {entry.id} not found")
-    collection_id = entry.journal_url.rstrip("/").split("/")[-1]
+    if entry.journal_url is not None:
+        collection_id = entry.journal_url.rstrip("/").split("/")[-1]
 
     if entry.title is None:
         raise Exception(f"Unable to parse entry title")

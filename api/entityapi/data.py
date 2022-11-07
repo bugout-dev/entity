@@ -45,21 +45,12 @@ class EntityCollectionsResponse(BaseModel):
     collections: List[EntityCollectionResponse] = Field(default_factory=list)
 
 
-class CreateEntityRequest(BaseModel, extra=Extra.allow):
+class Entity(BaseModel, extra=Extra.allow):
     address: str
     blockchain: str
     name: str
 
-    entity_type: EntityTypes
-
-
-class Entity(CreateEntityRequest):
-    # Smartcontract type
-    support_ercs: Optional[List[str]] = Field(default_factory=list)
-    proxy: Optional[bool] = None
-
-    # Smartcontract deployer type
-    deployed_contracts: Optional[List[str]] = Field(default_factory=list)
+    required_fields: Optional[Dict[str, Union[str, bool, int, list]]] = None
 
     extra: Dict[str, Any]
 
@@ -82,13 +73,11 @@ class EntityResponse(BaseModel):
     collection_id: uuid.UUID
     address: Optional[str] = None
     blockchain: Optional[str] = None
-    title: Optional[str] = None
-    entity_type: Optional[str] = None
-    content: Dict[str, Any]
+    name: Optional[str] = None
 
-    # Smartcontract type
-    support_ercs: Optional[List[str]] = Field(default_factory=list)
-    proxy: Optional[bool] = None
+    required_fields: Optional[List[Dict[str, Any]]] = None
+    secondary_fields: Optional[Dict[str, Any]] = None
 
-    # Smartcontract deployer type
-    deployed_contracts: Optional[List[str]] = Field(default_factory=list)
+
+class EntitiesResponse(BaseModel):
+    entities: List[EntityResponse] = Field(default_factory=list)

@@ -138,13 +138,12 @@ async def list_entity_collections_handler(
 async def add_entity_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
-    create_request: data.CreateEntityRequest = Body(...),
+    create_request: data.Entity = Body(...),
 ) -> data.EntityResponse:
     web3_signature = request.state.signature
     try:
-        create_entity = data.Entity.parse_obj(create_request)
-        title, tags, content = await actions.parse_entity_to_entry(
-            create_entity=create_entity
+        title, tags, content = actions.parse_entity_to_entry(
+            create_entity=create_request
         )
 
         response: BugoutJournalEntry = bc.create_entry(
@@ -157,15 +156,44 @@ async def add_entity_handler(
             auth_type="web3",
             headers={BUGOUT_APPLICATION_ID_HEADER: ENTITY_APPLICATION_ID},
         )
+
+        entity_response = actions.parse_entry_to_entity(entry=response)
+
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=500)
 
-    entity_response = await actions.parse_entry_to_entity(entry=response)
-
     return entity_response
+
+
+@app.get("/collections/{collection_id}/entities")
+async def get_entities_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+):
+    web3_signature = request.state.signature
+    try:
+        response = bc.get_entries(
+            token=web3_signature,
+            journal_id=collection_id,
+            auth_type="web3",
+            headers={BUGOUT_APPLICATION_ID_HEADER: ENTITY_APPLICATION_ID},
+        )
+
+        entities_response = data.EntitiesResponse(entities=[])
+        for entry in response.entries:
+            entity = actions.parse_entry_to_entity(entry=entry)
+            entities_response.entities.append(entity)
+
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return entities_response
 
 
 @app.delete(
@@ -192,6 +220,4 @@ async def delete_entity_handler(
         logger.error(e)
         raise HTTPException(status_code=500)
 
-    entity_response = await actions.parse_entry_to_entity(entry=response)
-
-    return entity_response
+    return data.EntityResponse(entity_id=response.id, collection_id=collection_id)

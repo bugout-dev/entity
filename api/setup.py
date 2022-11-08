@@ -12,7 +12,7 @@ setup(
     version=VERSION,
     packages=find_packages(),
     install_requires=[
-        "bugout>=0.2.1",
+        "bugout>=0.2.2",
         "fastapi",
         "psycopg2-binary",
         "pydantic",

@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from web3login.middlewares.fastapi import Web3AuthorizationMiddleware
 
 from . import actions, data
-from .settings import BUGOUT_APPLICATION_ID_HEADER, ENTITY_APPLICATION_ID, ORIGINS
+from .settings import BUGOUT_APPLICATION_ID_HEADER, MOONSTREAM_APPLICATION_ID, ORIGINS
 from .settings import bugout_client as bc
 from .version import VERSION
 
@@ -58,7 +58,7 @@ app = FastAPI(
 app.add_middleware(
     Web3AuthorizationMiddleware,
     whitelist=whitelist_paths,
-    application=ENTITY_APPLICATION_ID,
+    application=MOONSTREAM_APPLICATION_ID,
 )
 app.add_middleware(
     CORSMiddleware,
@@ -97,7 +97,7 @@ async def add_entity_collection_handler(
             token=web3_signature,
             name=create_request.name,
             auth_type="web3",
-            headers={BUGOUT_APPLICATION_ID_HEADER: ENTITY_APPLICATION_ID},
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
@@ -118,7 +118,7 @@ async def list_entity_collections_handler(
         response = bc.list_journals(
             token=web3_signature,
             auth_type="web3",
-            headers={BUGOUT_APPLICATION_ID_HEADER: ENTITY_APPLICATION_ID},
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
@@ -154,7 +154,7 @@ async def add_entity_handler(
             tags=tags,
             context_type="entity",
             auth_type="web3",
-            headers={BUGOUT_APPLICATION_ID_HEADER: ENTITY_APPLICATION_ID},
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
 
         entity_response = actions.parse_entry_to_entity(
@@ -195,7 +195,7 @@ async def add_entity_bulk_handler(
             journal_id=collection_id,
             entries=create_entries,
             auth_type="web3",
-            headers={BUGOUT_APPLICATION_ID_HEADER: ENTITY_APPLICATION_ID},
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
 
         entities_response = data.EntitiesResponse(entities=[])
@@ -225,7 +225,7 @@ async def get_entities_handler(
             token=web3_signature,
             journal_id=collection_id,
             auth_type="web3",
-            headers={BUGOUT_APPLICATION_ID_HEADER: ENTITY_APPLICATION_ID},
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
 
         entities_response = data.EntitiesResponse(entities=[])
@@ -260,7 +260,7 @@ async def delete_entity_handler(
             journal_id=collection_id,
             entry_id=entity_id,
             auth_type="web3",
-            headers={BUGOUT_APPLICATION_ID_HEADER: ENTITY_APPLICATION_ID},
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)

@@ -23,6 +23,6 @@ if BUGOUT_APPLICATION_ID_HEADER_RAW is not None:
 else:
     raise ValueError("BUGOUT_APPLICATION_ID_HEADER environment variable must be set")
 
-ENTITY_APPLICATION_ID = os.environ.get("ENTITY_APPLICATION_ID", "")
-if ENTITY_APPLICATION_ID == "":
-    raise ValueError("ENTITY_APPLICATION_ID environment variable must be set")
+MOONSTREAM_APPLICATION_ID = os.environ.get("MOONSTREAM_APPLICATION_ID", "")
+if MOONSTREAM_APPLICATION_ID == "":
+    raise ValueError("MOONSTREAM_APPLICATION_ID environment variable must be set")

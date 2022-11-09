@@ -54,5 +54,5 @@ echo
 echo -e "${PREFIX_INFO} Replacing existing Entity API service definition with ${ENTITY_API_SERVICE_FILE}"
 chmod 644 "${SCRIPT_DIR}/${ENTITY_API_SERVICE_FILE}"
 cp "${SCRIPT_DIR}/${ENTITY_API_SERVICE_FILE}" "/home/ubuntu/.config/systemd/user/${ENTITY_API_SERVICE_FILE}"
-XDG_RUNTIME_DIR="/run/user/$UID" systemctl --user daemon-reload
-XDG_RUNTIME_DIR="/run/user/$UID" systemctl --user restart "${ENTITY_API_SERVICE_FILE}"
+XDG_RUNTIME_DIR="/run/user/1000" systemctl --user daemon-reload
+XDG_RUNTIME_DIR="/run/user/1000" systemctl --user restart "${ENTITY_API_SERVICE_FILE}"

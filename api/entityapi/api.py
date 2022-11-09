@@ -38,10 +38,10 @@ tags_metadata = [{"name": "time", "description": "Server timestamp endpoints."}]
 whitelist_paths: Dict[str, str] = {}
 whitelist_paths.update(
     {
-        "/ping": "GET",
-        "/now": "GET",
-        "/docs": "GET",
-        "/openapi.json": "GET",
+        "/entity/ping": "GET",
+        "/entity/now": "GET",
+        "/entity/docs": "GET",
+        "/entity/openapi.json": "GET",
     }
 )
 
@@ -51,7 +51,7 @@ app = FastAPI(
     description="Entity API endpoints.",
     version=VERSION,
     openapi_tags=tags_metadata,
-    openapi_url="/openapi.json",
+    openapi_url="/entity/openapi.json",
     docs_url=None,
 )
 
@@ -69,7 +69,7 @@ app.add_middleware(
 )
 
 
-@app.get("/ping", response_model=data.PingResponse)
+@app.get("/entity/ping", response_model=data.PingResponse)
 async def ping_handler() -> data.PingResponse:
     """
     Check server status.
@@ -77,7 +77,7 @@ async def ping_handler() -> data.PingResponse:
     return data.PingResponse(status="ok")
 
 
-@app.get("/now", tags=["time"])
+@app.get("/entity/now", tags=["time"])
 async def now_handler() -> data.NowResponse:
     """
     Get server current time.
@@ -85,7 +85,7 @@ async def now_handler() -> data.NowResponse:
     return data.NowResponse(epoch_time=time.time())
 
 
-@app.post("/collections", response_model=data.EntityCollectionResponse)
+@app.post("/entity/collections", response_model=data.EntityCollectionResponse)
 async def add_entity_collection_handler(
     request: Request,
     create_request: data.CreateEntityCollectionAPIRequest = Body(...),
@@ -108,7 +108,7 @@ async def add_entity_collection_handler(
     return data.EntityCollectionResponse(name=response.name, collection_id=response.id)
 
 
-@app.get("/collections", response_model=data.EntityCollectionsResponse)
+@app.get("/entity/collections", response_model=data.EntityCollectionsResponse)
 async def list_entity_collections_handler(
     request: Request,
 ) -> data.EntityCollectionsResponse:
@@ -134,7 +134,9 @@ async def list_entity_collections_handler(
     )
 
 
-@app.post("/collections/{collection_id}/entities", response_model=data.EntityResponse)
+@app.post(
+    "/entity/collections/{collection_id}/entities", response_model=data.EntityResponse
+)
 async def add_entity_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
@@ -170,7 +172,9 @@ async def add_entity_handler(
     return entity_response
 
 
-@app.post("/collections/{collection_id}/bulk", response_model=data.EntitiesResponse)
+@app.post(
+    "/entity/collections/{collection_id}/bulk", response_model=data.EntitiesResponse
+)
 async def add_entity_bulk_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
@@ -214,7 +218,9 @@ async def add_entity_bulk_handler(
     return entities_response
 
 
-@app.get("/collections/{collection_id}/entities", response_model=data.EntitiesResponse)
+@app.get(
+    "/entity/collections/{collection_id}/entities", response_model=data.EntitiesResponse
+)
 async def get_entities_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
@@ -245,7 +251,7 @@ async def get_entities_handler(
 
 
 @app.delete(
-    "/collections/{collection_id}/entities/{entity_id}",
+    "/entity/collections/{collection_id}/entities/{entity_id}",
     response_model=data.EntityResponse,
 )
 async def delete_entity_handler(

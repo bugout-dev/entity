@@ -25,7 +25,7 @@ SECRETS_DIR="${SECRETS_DIR:-/home/ubuntu/entity-secrets}"
 PARAMETERS_ENV_PATH="${SECRETS_DIR}/app.env"
 
 # API server service file
-ENTITY_API_SERVICE_FILE="${SCRIPT_DIR}/entity.service"
+ENTITY_API_SERVICE_FILE="entity.service"
 
 set -eu
 
@@ -42,13 +42,13 @@ echo -e "${PREFIX_INFO} Installing Python dependencies"
 echo
 echo
 echo -e "${PREFIX_INFO} Install checkenv"
-HOME=/root /usr/local/go/bin/go install github.com/bugout-dev/checkenv@latest
+HOME=/home/ubuntu /usr/local/go/bin/go install github.com/bugout-dev/checkenv@latest
 
 echo
 echo
 echo -e "${PREFIX_INFO} Retrieving addition deployment parameters"
 mkdir -p "${SECRETS_DIR}"
-AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" /root/go/bin/checkenv show aws_ssm+entity:true > "${PARAMETERS_ENV_PATH}"
+AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" /home/ubuntu/go/bin/checkenv show aws_ssm+entity:true > "${PARAMETERS_ENV_PATH}"
 
 echo
 echo

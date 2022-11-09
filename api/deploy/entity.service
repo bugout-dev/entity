@@ -9,7 +9,7 @@ WorkingDirectory=/home/ubuntu/entity/api
 EnvironmentFile=/home/ubuntu/entity-secrets/app.env
 Restart=on-failure
 RestartSec=15s
-ExecStart=/home/ubuntu/entity-env/bin/uvicorn --proxy-headers --forwarded-allow-ips='127.0.0.1' --host 127.0.0.1 --port 7291 --workers 8 entity.api:app
+ExecStart=/home/ubuntu/entity-env/bin/uvicorn --proxy-headers --forwarded-allow-ips='127.0.0.1' --host 127.0.0.1 --port 7291 --workers 8 entityapi.api:app
 SyslogIdentifier=entity
 
 [Install]

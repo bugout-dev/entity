@@ -81,3 +81,11 @@ class EntityResponse(BaseModel):
 
 class EntitiesResponse(BaseModel):
     entities: List[EntityResponse] = Field(default_factory=list)
+
+
+class EntitySearchResponse(BaseModel):
+    total_results: int
+    offset: int
+    next_offset: Optional[int] = None
+    max_score: float
+    entities: List[EntityResponse] = Field(default_factory=list)

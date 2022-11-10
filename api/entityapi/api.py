@@ -7,7 +7,7 @@ import time
 import uuid
 from typing import Any, Collection, Dict, List, Optional
 
-from bugout.data import BugoutJournalEntry, BugoutJournalEntries
+from bugout.data import BugoutJournalEntry, BugoutJournalEntries, BugoutSearchResults
 from bugout.exceptions import BugoutResponseException
 from fastapi import (
     BackgroundTasks,
@@ -275,3 +275,60 @@ async def delete_entity_handler(
         raise HTTPException(status_code=500)
 
     return data.EntityResponse(entity_id=response.id, collection_id=collection_id)
+
+
+@app.get(
+    "/entity/collections/{collection_id}/search",
+    response_model=data.EntitySearchResponse,
+)
+async def search_entity_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+    q: str = Query(""),
+    filters: Optional[List[str]] = Query(None),
+    limit: int = Query(10),
+    offset: int = Query(0),
+    content: bool = Query(True),
+) -> data.EntitySearchResponse:
+    web3_signature = request.state.signature
+    try:
+        response: BugoutSearchResults = bc.search(
+            token=web3_signature,
+            journal_id=collection_id,
+            query=q,
+            filters=filters,
+            limit=limit,
+            offset=offset,
+            content=content,
+            auth_type="web3",
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
+        )
+
+        entities_response = data.EntitySearchResponse(
+            total_results=response.total_results,
+            offset=response.offset,
+            next_offset=response.next_offset,
+            max_score=response.max_score,
+            entities=[],
+        )
+        for entry in response.results:
+            entity_response = actions.parse_entry_to_entity(
+                entry=BugoutJournalEntry(
+                    id=entry.entry_url.rstrip("/").split("/")[-1],
+                    title=entry.title,
+                    content=entry.content,
+                    tags=entry.tags,
+                    created_at=entry.created_at,
+                    updated_at=entry.updated_at,
+                ),
+                collection_id=str(collection_id),
+            )
+            entities_response.entities.append(entity_response)
+
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return entities_response

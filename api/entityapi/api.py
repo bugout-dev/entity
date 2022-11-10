@@ -288,7 +288,7 @@ async def search_entity_handler(
     filters: Optional[List[str]] = Query(None),
     limit: int = Query(10),
     offset: int = Query(0),
-    content: Optional[bool] = Query(True),
+    content: bool = Query(True),
 ) -> data.EntitySearchResponse:
     web3_signature = request.state.signature
     try:

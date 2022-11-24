@@ -32,7 +32,6 @@ class NowResponse(BaseModel):
 
 
 class CreateEntityCollectionAPIRequest(BaseModel):
-    collection_id: uuid.UUID
     name: str
 
 

@@ -18,7 +18,7 @@ setup(
         "pydantic",
         "sqlalchemy",
         "uvicorn",
-        "web3login>=0.0.3",
+        "web3login>=0.0.4",
     ],
     extras_require={
         "dev": ["alembic", "black", "mypy", "isort"],

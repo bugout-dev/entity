@@ -7,7 +7,7 @@ import time
 import uuid
 from typing import Any, Collection, Dict, List, Optional
 
-from bugout.data import BugoutJournalEntry, BugoutJournalEntries, BugoutSearchResults
+from bugout.data import BugoutJournalEntries, BugoutJournalEntry, BugoutSearchResults
 from bugout.exceptions import BugoutResponseException
 from fastapi import (
     BackgroundTasks,
@@ -23,7 +23,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from web3login.middlewares.fastapi import Web3AuthorizationMiddleware
+from web3login.middlewares.fastapi import AuthorizationCheckMiddleware
 
 from . import actions, data
 from .settings import BUGOUT_APPLICATION_ID_HEADER, MOONSTREAM_APPLICATION_ID, ORIGINS
@@ -56,9 +56,10 @@ app = FastAPI(
 )
 
 app.add_middleware(
-    Web3AuthorizationMiddleware,
+    AuthorizationCheckMiddleware,
     whitelist=whitelist_paths,
     application=MOONSTREAM_APPLICATION_ID,
+    auth_types=["bearer", "web3"],
 )
 app.add_middleware(
     CORSMiddleware,
@@ -70,7 +71,7 @@ app.add_middleware(
 
 
 @app.get("/entity/ping", response_model=data.PingResponse)
-async def ping_handler() -> data.PingResponse:
+async def ping_handler(request: Request) -> data.PingResponse:
     """
     Check server status.
     """
@@ -90,13 +91,14 @@ async def add_entity_collection_handler(
     request: Request,
     create_request: data.CreateEntityCollectionAPIRequest = Body(...),
 ) -> data.EntityCollectionResponse:
-    web3_signature = request.state.signature
+    token = request.state.token
+    auth_type = request.state.auth_type
 
     try:
         response = bc.create_journal(
-            token=web3_signature,
+            token=token,
             name=create_request.name,
-            auth_type="web3",
+            auth_type=auth_type,
             headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
     except BugoutResponseException as e:
@@ -112,12 +114,13 @@ async def add_entity_collection_handler(
 async def list_entity_collections_handler(
     request: Request,
 ) -> data.EntityCollectionsResponse:
-    web3_signature = request.state.signature
+    token = request.state.token
+    auth_type = request.state.auth_type
 
     try:
         response = bc.list_journals(
-            token=web3_signature,
-            auth_type="web3",
+            token=token,
+            auth_type=auth_type,
             headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
     except BugoutResponseException as e:
@@ -142,20 +145,22 @@ async def add_entity_handler(
     collection_id: uuid.UUID = Path(...),
     create_request: data.Entity = Body(...),
 ) -> data.EntityResponse:
-    web3_signature = request.state.signature
+    token = request.state.token
+    auth_type = request.state.auth_type
+
     try:
         title, tags, content = actions.parse_entity_to_entry(
             create_entity=create_request
         )
 
         response: BugoutJournalEntry = bc.create_entry(
-            token=web3_signature,
+            token=token,
             journal_id=collection_id,
             title=title,
             content=json.dumps(content),
             tags=tags,
             context_type="entity",
-            auth_type="web3",
+            auth_type=auth_type,
             headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
 
@@ -180,7 +185,9 @@ async def add_entity_bulk_handler(
     collection_id: uuid.UUID = Path(...),
     create_request: List[data.Entity] = Body(...),
 ) -> data.EntitiesResponse:
-    web3_signature = request.state.signature
+    token = request.state.token
+    auth_type = request.state.auth_type
+
     try:
         create_entries = []
         for entity in create_request:
@@ -195,10 +202,10 @@ async def add_entity_bulk_handler(
             )
 
         response: BugoutJournalEntries = bc.create_entries_pack(
-            token=web3_signature,
+            token=token,
             journal_id=collection_id,
             entries=create_entries,
-            auth_type="web3",
+            auth_type=auth_type,
             headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
 
@@ -225,12 +232,14 @@ async def get_entities_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
 ) -> data.EntitiesResponse:
-    web3_signature = request.state.signature
+    token = request.state.token
+    auth_type = request.state.auth_type
+
     try:
         response = bc.get_entries(
-            token=web3_signature,
+            token=token,
             journal_id=collection_id,
-            auth_type="web3",
+            auth_type=auth_type,
             headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
 
@@ -259,13 +268,15 @@ async def delete_entity_handler(
     collection_id: uuid.UUID = Path(...),
     entity_id: uuid.UUID = Path(...),
 ) -> data.EntityResponse:
-    web3_signature = request.state.signature
+    token = request.state.token
+    auth_type = request.state.auth_type
+
     try:
         response: BugoutJournalEntry = bc.delete_entry(
-            token=web3_signature,
+            token=token,
             journal_id=collection_id,
             entry_id=entity_id,
-            auth_type="web3",
+            auth_type=auth_type,
             headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
     except BugoutResponseException as e:
@@ -290,17 +301,19 @@ async def search_entity_handler(
     offset: int = Query(0),
     content: bool = Query(True),
 ) -> data.EntitySearchResponse:
-    web3_signature = request.state.signature
+    token = request.state.token
+    auth_type = request.state.auth_type
+
     try:
         response: BugoutSearchResults = bc.search(
-            token=web3_signature,
+            token=token,
             journal_id=collection_id,
             query=q,
             filters=filters,
             limit=limit,
             offset=offset,
             content=content,
-            auth_type="web3",
+            auth_type=auth_type,
             headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
 

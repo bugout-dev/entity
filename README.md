@@ -18,7 +18,7 @@ For each entity there are 3 permanently required fields:
 
 Depending on the use case, you can specify additional fields that will be required for your entities in certain collection. Then, you will be able to search across these fields with high precision compared to other fields.
 
-Detailed API documentation you can find at https://docs.moonstream.to/entity/entity-api/
+Detailed API documentation you can find at https://docs.moonstream.to/engine/entity-api/
 
 ## Different use cases and schemes
 

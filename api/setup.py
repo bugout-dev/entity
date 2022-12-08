@@ -24,7 +24,7 @@ setup(
         "dev": ["alembic", "black", "mypy", "isort"],
         "distribute": ["setuptools", "twine", "wheel"],
     },
-    description="Moonstream entiry API",
+    description="Moonstream entity API",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Moonstream",

@@ -23,6 +23,14 @@ class PingResponse(BaseModel):
     status: str
 
 
+class VersionResponse(BaseModel):
+    """
+    Schema for version response
+    """
+
+    version: str
+
+
 class NowResponse(BaseModel):
     """
     Schema for responses on /now endpoint

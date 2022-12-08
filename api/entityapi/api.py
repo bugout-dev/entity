@@ -40,6 +40,7 @@ whitelist_paths.update(
     {
         "/entity/ping": "GET",
         "/entity/now": "GET",
+        "/entity/version": "GET",
         "/entity/docs": "GET",
         "/entity/openapi.json": "GET",
     }
@@ -84,6 +85,14 @@ async def now_handler() -> data.NowResponse:
     Get server current time.
     """
     return data.NowResponse(epoch_time=time.time())
+
+
+@app.get("/entity/version", response_model=data.VersionResponse)
+async def ping_handler(request: Request) -> data.VersionResponse:
+    """
+    Check server version.
+    """
+    return data.VersionResponse(version=VERSION)
 
 
 @app.post("/entity/collections", response_model=data.EntityCollectionResponse)

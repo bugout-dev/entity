@@ -57,7 +57,9 @@ class Entity(BaseModel, extra=Extra.allow):
     blockchain: str
     name: str
 
-    required_fields: Optional[Dict[str, Union[str, bool, int, list]]] = None
+    required_fields: List[Dict[str, Union[str, bool, int, list]]] = Field(
+        default_factory=list
+    )
 
     extra: Dict[str, Any]
 

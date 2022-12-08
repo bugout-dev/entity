@@ -33,37 +33,38 @@ def parse_entity_to_entry(
     tags: List[str] = []
     content: Dict[str, Any] = {}
 
-    for field, val in create_entity._iter():
+    for field, vals in create_entity._iter():
         if field == "address":
             try:
-                address = Web3.toChecksumAddress(cast(str, val))
+                address = Web3.toChecksumAddress(cast(str, vals))
             except Exception:
                 logger.info(f"Unknown type of web3 address {address}")
             title = f"{address} - {title}"
             tags.append(f"{field}:{address}")
 
         elif field == "blockchain":
-            tags.append(f"{field}:{val}")
+            tags.append(f"{field}:{vals}")
 
         elif field == "required_fields":
             required_fields = []
-            for f, v in val.items():
-                if isinstance(v, list):
-                    for vl in v:
+            for val in vals:
+                for f, v in val.items():
+                    if isinstance(v, list):
+                        for vl in v:
+                            if len(f) >= 128 and len(vl) >= 128:
+                                logger.warn(f"Too long key:value {f}:{vl}")
+                                continue
+                            required_fields.append(f"{str(f)}:{str(vl)}")
+                    else:
                         if len(f) >= 128 and len(vl) >= 128:
                             logger.warn(f"Too long key:value {f}:{vl}")
                             continue
-                        required_fields.append(f"{str(f)}:{str(vl)}")
-                else:
-                    if len(f) >= 128 and len(vl) >= 128:
-                        logger.warn(f"Too long key:value {f}:{vl}")
-                        continue
-                    required_fields.append(f"{f}:{v}")
+                        required_fields.append(f"{f}:{v}")
 
-            tags.extend(required_fields)
+                tags.extend(required_fields)
 
         elif field == "extra":
-            for k, v in val.items():
+            for k, v in vals.items():
                 content[k] = v
 
     return title, tags, content

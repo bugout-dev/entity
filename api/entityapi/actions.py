@@ -1,8 +1,9 @@
 import json
 import logging
 from typing import Any, Collection, Dict, List, Optional, Tuple, Union, cast
+import uuid
 
-from bugout.data import BugoutJournalEntry
+from bugout.data import BugoutJournalEntry, BugoutJournalEntryContent
 from web3 import Web3
 
 from . import data
@@ -69,14 +70,18 @@ def parse_entity_to_entry(
 
 
 def parse_entry_to_entity(
-    entry: BugoutJournalEntry, collection_id: str
+    entry: Union[BugoutJournalEntry, BugoutJournalEntryContent],
+    collection_id: uuid.UUID,
+    entity_id: Optional[uuid.UUID] = None,
 ) -> data.EntityResponse:
     """
     Convert Bugout entry to entity response.
     """
-    if entry.journal_url is not None:
-        collection_id = entry.journal_url.rstrip("/").split("/")[-1]
-
+    if entity_id is None:
+        if type(entry) == BugoutJournalEntry:
+            entity_id = entry.id
+        else:
+            raise Exception("Unable to parse entity_id")
     if entry.title is None:
         raise Exception(f"Unable to parse entry title")
     name = " - ".join(entry.title.split(" - ")[1:])
@@ -99,7 +104,7 @@ def parse_entry_to_entity(
 
     return data.EntityResponse(
         collection_id=collection_id,
-        entity_id=entry.id,
+        entity_id=entity_id,
         address=address,
         blockchain=blockchain,
         name=name,

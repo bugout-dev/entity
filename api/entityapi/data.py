@@ -90,6 +90,15 @@ class EntitiesResponse(BaseModel):
     entities: List[EntityResponse] = Field(default_factory=list)
 
 
+class EntityFields(BaseModel):
+    required_fields: List[Dict[str, Union[str, bool, int, list]]] = Field(
+        default_factory=list
+    )
+    secondary_fields: List[Dict[str, Union[str, bool, int, list]]] = Field(
+        default_factory=list
+    )
+
+
 class EntitySearchResponse(BaseModel):
     total_results: int
     offset: int

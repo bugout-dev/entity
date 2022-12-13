@@ -7,8 +7,14 @@ import time
 import uuid
 from typing import Any, Collection, Dict, List, Optional
 
-from bugout.data import BugoutJournalEntries, BugoutJournalEntry, BugoutSearchResults
+from bugout.data import (
+    BugoutJournalEntries,
+    BugoutJournalEntry,
+    BugoutJournalEntryContent,
+    BugoutSearchResults,
+)
 from bugout.exceptions import BugoutResponseException
+from bugout.journal import TagsAction
 from fastapi import (
     BackgroundTasks,
     Body,
@@ -40,6 +46,7 @@ whitelist_paths.update(
     {
         "/entity/ping": "GET",
         "/entity/now": "GET",
+        "/entity/version": "GET",
         "/entity/docs": "GET",
         "/entity/openapi.json": "GET",
     }
@@ -84,6 +91,14 @@ async def now_handler() -> data.NowResponse:
     Get server current time.
     """
     return data.NowResponse(epoch_time=time.time())
+
+
+@app.get("/entity/version", response_model=data.VersionResponse)
+async def version_handler(request: Request) -> data.VersionResponse:
+    """
+    Check server version.
+    """
+    return data.VersionResponse(version=VERSION)
 
 
 @app.post("/entity/collections", response_model=data.EntityCollectionResponse)
@@ -165,7 +180,7 @@ async def add_entity_handler(
         )
 
         entity_response = actions.parse_entry_to_entity(
-            entry=response, collection_id=str(collection_id)
+            entry=response, collection_id=collection_id
         )
 
     except BugoutResponseException as e:
@@ -212,7 +227,7 @@ async def add_entity_bulk_handler(
         entities_response = data.EntitiesResponse(entities=[])
         for entry in response.entries:
             entity_response = actions.parse_entry_to_entity(
-                entry=entry, collection_id=str(collection_id)
+                entry=entry, collection_id=collection_id
             )
             entities_response.entities.append(entity_response)
 
@@ -223,6 +238,48 @@ async def add_entity_bulk_handler(
         raise HTTPException(status_code=500)
 
     return entities_response
+
+
+@app.put(
+    "/entity/collections/{collection_id}/entities/{entity_id}",
+    response_model=data.EntityResponse,
+)
+async def update_entity_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+    entity_id: uuid.UUID = Path(...),
+    update_request: data.Entity = Body(...),
+) -> data.EntityResponse:
+    token = request.state.token
+    auth_type = request.state.auth_type
+
+    try:
+        title, tags, content = actions.parse_entity_to_entry(
+            create_entity=update_request
+        )
+        response: BugoutJournalEntryContent = bc.update_entry_content(
+            token=token,
+            journal_id=collection_id,
+            entry_id=entity_id,
+            title=title,
+            content=json.dumps(content),
+            tags=tags,
+            tags_action=TagsAction.replace,
+            auth_type=auth_type,
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
+        )
+
+        entity_response = actions.parse_entry_to_entity(
+            entry=response, collection_id=collection_id, entity_id=entity_id
+        )
+
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return entity_response
 
 
 @app.get(
@@ -246,7 +303,7 @@ async def get_entities_handler(
         entities_response = data.EntitiesResponse(entities=[])
         for entry in response.entries:
             entity_response = actions.parse_entry_to_entity(
-                entry=entry, collection_id=str(collection_id)
+                entry=entry, collection_id=collection_id
             )
             entities_response.entities.append(entity_response)
 
@@ -334,7 +391,7 @@ async def search_entity_handler(
                     created_at=entry.created_at,
                     updated_at=entry.updated_at,
                 ),
-                collection_id=str(collection_id),
+                collection_id=collection_id,
             )
             entities_response.entities.append(entity_response)
 

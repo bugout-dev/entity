@@ -23,6 +23,14 @@ class PingResponse(BaseModel):
     status: str
 
 
+class VersionResponse(BaseModel):
+    """
+    Schema for version response
+    """
+
+    version: str
+
+
 class NowResponse(BaseModel):
     """
     Schema for responses on /now endpoint
@@ -49,7 +57,9 @@ class Entity(BaseModel, extra=Extra.allow):
     blockchain: str
     name: str
 
-    required_fields: Optional[Dict[str, Union[str, bool, int, list]]] = None
+    required_fields: List[Dict[str, Union[str, bool, int, list]]] = Field(
+        default_factory=list
+    )
 
     extra: Dict[str, Any]
 
@@ -80,6 +90,15 @@ class EntityResponse(BaseModel):
 
 class EntitiesResponse(BaseModel):
     entities: List[EntityResponse] = Field(default_factory=list)
+
+
+class EntityFields(BaseModel):
+    required_fields: List[Dict[str, Union[str, bool, int, list]]] = Field(
+        default_factory=list
+    )
+    secondary_fields: List[Dict[str, Union[str, bool, int, list]]] = Field(
+        default_factory=list
+    )
 
 
 class EntitySearchResponse(BaseModel):

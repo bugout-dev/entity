@@ -1,8 +1,9 @@
 import json
 import logging
 from typing import Any, Collection, Dict, List, Optional, Tuple, Union, cast
+import uuid
 
-from bugout.data import BugoutJournalEntry
+from bugout.data import BugoutJournalEntry, BugoutJournalEntryContent
 from web3 import Web3
 
 from . import data
@@ -32,51 +33,56 @@ def parse_entity_to_entry(
     tags: List[str] = []
     content: Dict[str, Any] = {}
 
-    for field, val in create_entity._iter():
+    for field, vals in create_entity._iter():
         if field == "address":
             try:
-                address = Web3.toChecksumAddress(cast(str, val))
+                address = Web3.toChecksumAddress(cast(str, vals))
             except Exception:
                 logger.info(f"Unknown type of web3 address {address}")
             title = f"{address} - {title}"
             tags.append(f"{field}:{address}")
 
         elif field == "blockchain":
-            tags.append(f"{field}:{val}")
+            tags.append(f"{field}:{vals}")
 
         elif field == "required_fields":
             required_fields = []
-            for f, v in val.items():
-                if isinstance(v, list):
-                    for vl in v:
+            for val in vals:
+                for f, v in val.items():
+                    if isinstance(v, list):
+                        for vl in v:
+                            if len(f) >= 128 and len(vl) >= 128:
+                                logger.warn(f"Too long key:value {f}:{vl}")
+                                continue
+                            required_fields.append(f"{str(f)}:{str(vl)}")
+                    else:
                         if len(f) >= 128 and len(vl) >= 128:
                             logger.warn(f"Too long key:value {f}:{vl}")
                             continue
-                        required_fields.append(f"{str(f)}:{str(vl)}")
-                else:
-                    if len(f) >= 128 and len(vl) >= 128:
-                        logger.warn(f"Too long key:value {f}:{vl}")
-                        continue
-                    required_fields.append(f"{f}:{v}")
+                        required_fields.append(f"{f}:{v}")
 
-            tags.extend(required_fields)
+                tags.extend(required_fields)
 
         elif field == "extra":
-            for k, v in val.items():
+            for k, v in vals.items():
                 content[k] = v
 
     return title, tags, content
 
 
 def parse_entry_to_entity(
-    entry: BugoutJournalEntry, collection_id: str
+    entry: Union[BugoutJournalEntry, BugoutJournalEntryContent],
+    collection_id: uuid.UUID,
+    entity_id: Optional[uuid.UUID] = None,
 ) -> data.EntityResponse:
     """
     Convert Bugout entry to entity response.
     """
-    if entry.journal_url is not None:
-        collection_id = entry.journal_url.rstrip("/").split("/")[-1]
-
+    if entity_id is None:
+        if type(entry) == BugoutJournalEntry:
+            entity_id = entry.id
+        else:
+            raise Exception("Unable to parse entity_id")
     if entry.title is None:
         raise Exception(f"Unable to parse entry title")
     name = " - ".join(entry.title.split(" - ")[1:])
@@ -99,7 +105,7 @@ def parse_entry_to_entity(
 
     return data.EntityResponse(
         collection_id=collection_id,
-        entity_id=entry.id,
+        entity_id=entity_id,
         address=address,
         blockchain=blockchain,
         name=name,

@@ -12,7 +12,7 @@ setup(
     version=VERSION,
     packages=find_packages(),
     install_requires=[
-        "bugout>=0.2.2",
+        "bugout>=0.2.3",
         "fastapi",
         "psycopg2-binary",
         "pydantic",
@@ -24,7 +24,7 @@ setup(
         "dev": ["alembic", "black", "mypy", "isort"],
         "distribute": ["setuptools", "twine", "wheel"],
     },
-    description="Moonstream entiry API",
+    description="Moonstream entity API",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Moonstream",

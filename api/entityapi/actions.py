@@ -38,7 +38,8 @@ def parse_entity_to_entry(
             try:
                 address = Web3.toChecksumAddress(cast(str, vals))
             except Exception:
-                logger.info(f"Unknown type of web3 address {address}")
+                logger.info(f"Unknown type of web3 address {vals}")
+                address = vals
             title = f"{address} - {title}"
             tags.append(f"{field}:{address}")
 
@@ -61,7 +62,7 @@ def parse_entity_to_entry(
                             continue
                         required_fields.append(f"{f}:{v}")
 
-                tags.extend(required_fields)
+            tags.extend(required_fields)
 
         elif field == "extra":
             for k, v in vals.items():

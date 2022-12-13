@@ -80,8 +80,53 @@ def entities_create_handler(args: argparse.Namespace) -> None:
     print(response.json())
 
 
-def create_bulk_handler(args: argparse.Namespace) -> None:
-    pass
+def entities_create_bulk_handler(args: argparse.Namespace) -> None:
+    required_fields = check_dict_format(args.required_field)
+    secondary_fields = {
+        k: v for d in check_dict_format(args.secondary_field) for k, v in d.items()
+    }  # Flat dictionary [{}, {}] -> {}
+
+    entities: List[Dict[str, Any]] = []
+    with open(args.input, "r", encoding="utf-8") as ifp:
+        csv_reader = csv.reader(ifp, delimiter=",")
+
+        headers = []
+        for i, row in enumerate(csv_reader):
+            if i == 0:
+                headers = row
+            else:
+                data_row: Dict[str, Any] = {}
+                for i, elem in enumerate(row):
+                    data_row[headers[i]] = elem
+                data_row["blockchain"] = args.blockchain
+                data_row["required_fields"] = required_fields
+                for k, v in secondary_fields.items():
+                    data_row[k] = v
+
+                entities.append(data_row)
+
+    ec = Entity()
+    response = ec.add_entities_bulk(
+        token=args.token,
+        collection_id=args.collection_id,
+        entities=entities,
+        auth_type=args.auth_type,
+        timeout=args.timeout,
+    )
+
+    print(response.json())
+
+
+def entities_list_handler(args: argparse.Namespace) -> None:
+    ec = Entity()
+    response = ec.list_entities(
+        token=args.token,
+        collection_id=args.collection_id,
+        auth_type=args.auth_type,
+        timeout=args.timeout,
+    )
+
+    print(response.json())
 
 
 def entities_delete_handler(args: argparse.Namespace) -> None:
@@ -235,12 +280,41 @@ def main() -> None:
         help="Collection id to search for",
     )
     parser_entities_bulk.add_argument(
+        "-r",
+        "--required_field",
+        type=json.loads,
+        default=[],
+        action="append",
+        help="Required fields, could be set multiple times",
+    )
+    parser_entities_bulk.add_argument(
+        "-s",
+        "--secondary_field",
+        type=json.loads,
+        default=[],
+        action="append",
+        help="Secondary fields, could be set multiple times",
+    )
+    parser_entities_bulk.add_argument(
         "-i",
         "--input",
         type=str,
+        required=True,
         help="Input CSV file path to load data from",
     )
-    parser_entities_bulk.set_defaults(func=create_bulk_handler)
+    parser_entities_bulk.set_defaults(func=entities_create_bulk_handler)
+
+    parser_entities_list = subcommands_entities.add_parser(
+        "list", description="List all entities in collection"
+    )
+    parser_entities_list.add_argument(
+        "-c",
+        "--collection_id",
+        type=uuid.UUID,
+        required=True,
+        help="Collection id to search for",
+    )
+    parser_entities_list.set_defaults(func=entities_list_handler)
 
     parser_entities_delete = subcommands_entities.add_parser(
         "delete", description="Delete entity"

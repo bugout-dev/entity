@@ -40,6 +40,26 @@ Create entity:
 entity --token "$MOONSTREAM_ACCESS_TOKEN" entities create --collection_id "$ENTITY_COLLECTION_ID" --address "0x000000000000000000000000000000000000dEaD" --blockchain ethereum --name "Dead address" --required_field '{"dead": true}' --required_field '{"owner": "unknown"}' --secondary_field '{"description": "Dangerous address for tokens burning mechanism."}'
 ```
 
+Create entity bulk from csv:
+
+Input file `addresses.csv` contains list of addresses:
+
+```csv
+address,name
+0xe1991fFb1f2271Bc645293cCDf4e38a3f1b7a13c,Address 1
+0x37309157eC7863b04c66B6fB2bf7b21EE8B03bA1,Address 2
+```
+
+```bash
+entity --token "$MOONSTREAM_ACCESS_TOKEN" entities bulk --blockchain ethereum --collection_id "$ENTITY_COLLECTION_ID" --input addresses.csv --required_field '{"owner": "me"}' --secondary_field '{"description": "My bot address"}'
+```
+
+List entities in collection:
+
+```bash
+entity --token "$MOONSTREAM_ACCESS_TOKEN" entities list --collection_id "$ENTITY_COLLECTION_ID"
+```
+
 Delete entity:
 
 ```bash

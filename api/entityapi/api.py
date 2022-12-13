@@ -5,7 +5,7 @@ import json
 import logging
 import time
 import uuid
-from typing import Any, Collection, Dict, List, Optional
+from typing import Any, Collection, Dict, List, Optional, Union
 
 from bugout.data import (
     BugoutJournalEntries,
@@ -352,7 +352,8 @@ async def delete_entity_handler(
 async def search_entity_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
-    q: str = Query(""),
+    required_field: List[str] = Query(default=[]),
+    secondary_field: List[str] = Query(default=[]),
     filters: Optional[List[str]] = Query(None),
     limit: int = Query(10),
     offset: int = Query(0),
@@ -360,6 +361,20 @@ async def search_entity_handler(
 ) -> data.EntitySearchResponse:
     token = request.state.token
     auth_type = request.state.auth_type
+
+    # Convert to regular journal search format
+    q = ""
+    cnt = len(required_field) + len(secondary_field)
+    for field in required_field:
+        q += f"tag:{str(field)}"
+        cnt -= 1
+        if cnt != 0:
+            q += " "
+    for field in secondary_field:
+        q += str(field)
+        cnt -= 1
+        if cnt != 0:
+            q += " "
 
     try:
         response: BugoutSearchResults = bc.search(

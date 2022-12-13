@@ -193,7 +193,6 @@ async def add_entity_handler(
         title, tags, content = actions.parse_entity_to_entry(
             create_entity=create_request
         )
-        print(title, tags, content)
 
         response: BugoutJournalEntry = bc.create_entry(
             token=token,

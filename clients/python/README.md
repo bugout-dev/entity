@@ -1,9 +1,11 @@
-# client
+# Moonstream Entity Python Client
 
-Generate Moonstream access token at https://moonstream.to/account/tokens and add to environment variable:
+In order to use this client, you will need a Moonstream access token. You can generate one at https://moonstream.to/account/tokens.
+
+The client library reads this token from the `MOONSTREAM_ACCESS_TOKEN` environment variable. To set it:
 
 ```bash
-export MOONSTREAM_ACCESS_TOKEN="<your_generate_moonstream_access_token_id>"
+export MOONSTREAM_ACCESS_TOKEN="<your_access_token>"
 ```
 
 ## Collections

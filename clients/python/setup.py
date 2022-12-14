@@ -7,7 +7,7 @@ with open("README.md") as ifp:
     long_description = ifp.read()
 
 setup(
-    name="entity",
+    name="moonstream-entity",
     version=ENTITY_CLIENT_VERSION,
     packages=find_packages(),
     package_data={"entity": ["py.typed"]},

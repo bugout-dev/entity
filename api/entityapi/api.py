@@ -152,6 +152,32 @@ async def list_entity_collections_handler(
     )
 
 
+@app.delete(
+    "/entity/collections/{collection_id}", response_model=data.EntityCollectionResponse
+)
+async def delete_entity_collection_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+) -> data.EntityCollectionResponse:
+    token = request.state.token
+    auth_type = request.state.auth_type
+
+    try:
+        response = bc.delete_journal(
+            token=token,
+            journal_id=collection_id,
+            auth_type=auth_type,
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
+        )
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return data.EntityCollectionResponse(name=response.name, collection_id=response.id)
+
+
 @app.post(
     "/entity/collections/{collection_id}/entities", response_model=data.EntityResponse
 )

@@ -1,7 +1,7 @@
 import uuid
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 
-import requests
+import requests  # type: ignore
 
 from . import data, exceptions
 from .settings import ENTITY_API_URL, ENTITY_REQUEST_TIMEOUT
@@ -227,3 +227,53 @@ class Entity:
         )
 
         return data.EntityResponse(**result)
+
+    def search_entity(
+        self,
+        token: Union[str, uuid.UUID],
+        collection_id: Union[str, uuid.UUID],
+        required_field: List[str] = [],
+        secondary_field: List[str] = [],
+        filters: Optional[List[str]] = None,
+        limit: int = 10,
+        offset: int = 0,
+        content: bool = True,
+        timeout: float = ENTITY_REQUEST_TIMEOUT,
+    ) -> data.EntitySearchResponse:
+
+        """
+        async def search_entity_handler(
+            request: Request,
+            collection_id: uuid.UUID = Path(...),
+            required_field: List[str] = Query(default=[]),
+            secondary_field: List[str] = Query(default=[]),
+            filters: Optional[List[str]] = Query(None),
+            limit: int = Query(10),
+            offset: int = Query(0),
+            content: bool = Query(True),
+        ) -> data.EntitySearchResponse:
+        """
+
+        headers = {
+            "Authorization": f"{data.AuthType.bearer.value} {token}",
+        }
+
+        params = {
+            "required_field": required_field,
+            "secondary_field": secondary_field,
+            "limit": limit,
+            "offset": offset,
+            "content": content,
+        }
+
+        if filters:
+            params["filters"] = filters
+
+        result = self._call(
+            method=data.Method.GET,
+            url=f"{self.api.endpoints[ENDPOINT_SEARCH]}/{str(collection_id)}/search",
+            headers=headers,
+            timeout=timeout,
+        )
+
+        return data.EntitySearchResponse(**result)

@@ -54,7 +54,10 @@ export class EntityClient {
     });
   }
 
-  async createEntity(collectionId: string, entity: Entity): Promise<Entity> {
+  async createEntity(
+    collectionId: string,
+    entity: Entity
+  ): Promise<EntityResponse> {
     const response = await fetch(
       `${this.apiUrl}/collections/${collectionId}/entities`,
       {
@@ -64,8 +67,8 @@ export class EntityClient {
       }
     );
 
-    const createdEntityRaw = await response.json();
-    return parseEntityResponse(createdEntityRaw);
+    const createdEntityResponseData: EntityResponse = await response.json();
+    return createdEntityResponseData;
   }
 
   async getEntity(collectionId: string, entityId: string): Promise<Entity> {
@@ -75,5 +78,71 @@ export class EntityClient {
     );
     const entitiesRaw = await response.json();
     return entitiesRaw.map((raw: EntityResponse) => parseEntityResponse(raw));
+  }
+
+  async deleteEntity(
+    collectionId: string,
+    entityId: string
+  ): Promise<EntityResponse> {
+    const response = await fetch(
+      `${this.apiUrl}/collections/${collectionId}/entities/${entityId}`,
+      { method: "DELETE", headers: this.standardHeaders() }
+    );
+    const entityResponseData: EntityResponse = await response.json();
+    return entityResponseData;
+  }
+
+  async updateEntity(
+    collectionId: string,
+    entityId: string,
+    entity: Entity
+  ): Promise<EntityResponse> {
+    const response = await fetch(
+      `${this.apiUrl}/collections/${collectionId}/entities/${entityId}`,
+      {
+        method: "PUT",
+        headers: this.standardHeaders(),
+        body: JSON.stringify(createEntityRequest(entity)),
+      }
+    );
+
+    const updatedEntityResponseData: EntityResponse = await response.json();
+    return updatedEntityResponseData;
+  }
+
+  async search(
+    collectionId: string,
+    requiredFields: string[],
+    content: string[],
+    limit?: number,
+    offset?: number
+  ): Promise<EntityResponse[]> {
+    limit = limit || 10;
+    offset = offset || 0;
+    if (limit < 0) {
+      throw new Error("limit must be non-negative");
+    }
+    if (offset < 0) {
+      throw new Error("offset must be non-negative");
+    }
+    const requiredFieldsQueries = requiredFields.map(
+      (term) => `required_field=${encodeURIComponent(term)}`
+    );
+    const secondaryFieldsQueries = content.map(
+      (term) => `secondary_field=${encodeURIComponent(term)}`
+    );
+    const queryParams = requiredFieldsQueries
+      .concat(secondaryFieldsQueries)
+      .join("+");
+    const response = await fetch(
+      `${this.apiUrl}/collections/${collectionId}/search?q=${queryParams}`,
+      {
+        method: "GET",
+        headers: this.standardHeaders(),
+      }
+    );
+
+    const searchResultsResponseData: EntityResponse[] = await response.json();
+    return searchResultsResponseData;
   }
 }

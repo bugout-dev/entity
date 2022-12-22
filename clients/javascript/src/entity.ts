@@ -8,7 +8,6 @@ type EntityFieldValue = string | number | boolean | EntityFieldValue[];
 type EntityField = { [key: string]: EntityFieldValue };
 
 export interface Entity {
-  entityId?: string;
   address: string;
   blockchain: string;
   name: string;
@@ -39,7 +38,6 @@ export function createEntityRequest(entity: Entity): any {
 
 export function parseEntityResponse(responseData: EntityResponse): Entity {
   let entity: Entity = {
-    entityId: responseData.entity_id,
     address: responseData.address,
     blockchain: responseData.blockchain,
     name: responseData.name,

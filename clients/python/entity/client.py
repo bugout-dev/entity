@@ -228,7 +228,7 @@ class Entity:
 
         return data.EntityResponse(**result)
 
-    def search_entity(
+    def search_entities(
         self,
         token: Union[str, uuid.UUID],
         collection_id: Union[str, uuid.UUID],

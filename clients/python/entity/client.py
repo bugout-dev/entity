@@ -241,19 +241,6 @@ class Entity:
         timeout: float = ENTITY_REQUEST_TIMEOUT,
     ) -> data.EntitySearchResponse:
 
-        """
-        async def search_entity_handler(
-            request: Request,
-            collection_id: uuid.UUID = Path(...),
-            required_field: List[str] = Query(default=[]),
-            secondary_field: List[str] = Query(default=[]),
-            filters: Optional[List[str]] = Query(None),
-            limit: int = Query(10),
-            offset: int = Query(0),
-            content: bool = Query(True),
-        ) -> data.EntitySearchResponse:
-        """
-
         headers = {
             "Authorization": f"{data.AuthType.bearer.value} {token}",
         }

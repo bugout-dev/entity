@@ -258,7 +258,7 @@ class Entity:
 
         result = self._call(
             method=data.Method.GET,
-            url=f"{self.api.endpoints[ENDPOINT_SEARCH]}/{str(collection_id)}/search",
+            url=f"{self.api.endpoints[ENDPOINT_COLLECTIONS]}/{str(collection_id)}{self.api.endpoints[ENDPOINT_SEARCH]}",
             headers=headers,
             timeout=timeout,
         )

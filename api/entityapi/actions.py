@@ -104,9 +104,9 @@ def parse_entry_to_entity(
             {"".join(field_and_val[:1]): ":".join(field_and_val[1:])}
         )
 
-    # limitation of bugout api in update entry
-    created_at = entry.created_at if type(entry) == BugoutJournalEntry else None
-    updated_at = entry.updated_at if type(entry) == BugoutJournalEntry else None
+    # limitation of BugoutJournalEntryContent
+    created_at = entry.created_at if "created_at" in entry.__fields__ else None
+    updated_at = entry.updated_at if "updated_at" in entry.__fields__ else None
 
     return data.EntityResponse(
         collection_id=collection_id,

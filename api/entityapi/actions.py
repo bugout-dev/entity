@@ -105,8 +105,8 @@ def parse_entry_to_entity(
         )
 
     # limitation of BugoutJournalEntryContent
-    created_at = entry.created_at if "created_at" in entry.__fields__ else None
-    updated_at = entry.updated_at if "updated_at" in entry.__fields__ else None
+    created_at = entry.created_at if "created_at" in entry.__fields__ else None  # type: ignore
+    updated_at = entry.updated_at if "updated_at" in entry.__fields__ else None  # type: ignore
 
     return data.EntityResponse(
         collection_id=collection_id,

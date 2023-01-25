@@ -86,6 +86,8 @@ class EntityResponse(BaseModel):
 
     required_fields: Optional[List[Dict[str, Any]]] = None
     secondary_fields: Optional[Dict[str, Any]] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 
 class EntitiesResponse(BaseModel):

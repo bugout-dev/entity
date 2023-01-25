@@ -104,6 +104,10 @@ def parse_entry_to_entity(
             {"".join(field_and_val[:1]): ":".join(field_and_val[1:])}
         )
 
+    # limitation of BugoutJournalEntryContent
+    created_at = entry.created_at if "created_at" in entry.__fields__ else None  # type: ignore
+    updated_at = entry.updated_at if "updated_at" in entry.__fields__ else None  # type: ignore
+
     return data.EntityResponse(
         collection_id=collection_id,
         entity_id=entity_id,
@@ -112,4 +116,6 @@ def parse_entry_to_entity(
         name=name,
         required_fields=required_fields,
         secondary_fields=json.loads(entry.content) if entry.content is not None else {},
+        created_at=created_at,
+        updated_at=updated_at,
     )

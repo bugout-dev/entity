@@ -80,8 +80,12 @@ def parse_entry_to_entity(
     Convert Bugout entry to entity response.
     """
     if entity_id is None:
+        created_at = None
+        updated_at = None
         if type(entry) == BugoutJournalEntry:
             entity_id = entry.id
+            created_at = entry.created_at
+            updated_at = entry.updated_at
         else:
             raise Exception("Unable to parse entity_id")
     if entry.title is None:
@@ -112,4 +116,6 @@ def parse_entry_to_entity(
         name=name,
         required_fields=required_fields,
         secondary_fields=json.loads(entry.content) if entry.content is not None else {},
+        created_at=created_at,
+        updated_at=updated_at,
     )

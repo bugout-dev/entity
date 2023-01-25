@@ -135,9 +135,9 @@ curl --location --request POST "https://api.moonstream.to/entity/collections/$MO
         "name": "Dark Forest burner",
         "address": "0xe7f5cce56814f2155f05ef6311a6de55e4189ea5",
         "blockchain": "xdai",
-        "required_fields": {
-            "discord": "https://discord.com/invite/K56VNUQGvA",
-            "organization": true
+        "required_fields": [
+            {"discord": "https://discord.com/invite/K56VNUQGvA"},
+            {"organization": true}
         },
         "description": "Moonstream organization burner address for Dark Forest game."
     }'

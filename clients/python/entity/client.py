@@ -228,6 +228,39 @@ class Entity:
         )
         return data.EntitiesResponse(**result)
 
+    def update_entity(
+        self,
+        token: Union[str, uuid.UUID],
+        collection_id: Union[str, uuid.UUID],
+        entity_id: Union[str, uuid.UUID],
+        address: str,
+        blockchain: str,
+        name: str,
+        required_fields: List[Dict[str, Union[str, bool, int, list]]] = [],
+        secondary_fields: Dict[str, Any] = {},
+        auth_type: data.AuthType = data.AuthType.bearer,
+        timeout: float = ENTITY_REQUEST_TIMEOUT,
+    ) -> data.EntityResponse:
+        headers = {
+            "Authorization": f"{auth_type.value} {token}",
+        }
+        payload = {
+            "address": address,
+            "blockchain": blockchain,
+            "name": name,
+            "required_fields": required_fields,
+            "secondary_fields": secondary_fields,
+        }
+        result = self._call(
+            method=data.Method.PUT,
+            url=f"{self.api.endpoints[ENDPOINT_COLLECTIONS]}/{str(collection_id)}/entities/{str(entity_id)}",
+            headers=headers,
+            json=payload,
+            timeout=timeout,
+        )
+
+        return data.EntityResponse(**result)
+
     def delete_entity(
         self,
         token: Union[str, uuid.UUID],

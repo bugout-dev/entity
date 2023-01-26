@@ -266,6 +266,43 @@ async def add_entity_bulk_handler(
     return entities_response
 
 
+@app.get(
+    "/entity/collections/{collection_id}/entities/{entity_id}",
+    response_model=data.EntityResponse,
+)
+async def get_entity_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+    entity_id: uuid.UUID = Path(...),
+) -> data.EntityResponse:
+    """
+    Get entity by id
+    """
+    token = request.state.token
+    auth_type = request.state.auth_type
+
+    try:
+        response: BugoutJournalEntry = bc.get_entry(
+            token=token,
+            journal_id=collection_id,
+            entry_id=entity_id,
+            auth_type=auth_type,
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
+        )
+
+        entity_response = actions.parse_entry_to_entity(
+            entry=response, collection_id=collection_id
+        )
+
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return entity_response
+
+
 @app.put(
     "/entity/collections/{collection_id}/entities/{entity_id}",
     response_model=data.EntityResponse,

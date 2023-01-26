@@ -170,6 +170,26 @@ class Entity:
 
         return data.EntityResponse(**result)
 
+    def get_entity(
+        self,
+        token: Union[str, uuid.UUID],
+        collection_id: Union[str, uuid.UUID],
+        entity_id: Union[str, uuid.UUID],
+        auth_type: data.AuthType = data.AuthType.bearer,
+        timeout: float = ENTITY_REQUEST_TIMEOUT,
+    ) -> data.EntityResponse:
+        headers = {
+            "Authorization": f"{auth_type.value} {token}",
+        }
+        result = self._call(
+            method=data.Method.GET,
+            url=f"{self.api.endpoints[ENDPOINT_COLLECTIONS]}/{str(collection_id)}/entities/{str(entity_id)}",
+            headers=headers,
+            timeout=timeout,
+        )
+
+        return data.EntityResponse(**result)
+
     def add_entities_bulk(
         self,
         token: Union[str, uuid.UUID],

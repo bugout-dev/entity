@@ -140,13 +140,6 @@ def parse_permission_naming(permission: str, to_entity: bool = True) -> str:
     return permission.replace("collections", "journals").replace("entities", "entries")
 
 
-def parse_entity_permission_to_journal(permission: str) -> str:
-    """
-    "collections.entities.read" -> "journals.entries.read"
-    """
-    return permission.replace("journals", "collections").replace("entries", "entities")
-
-
 def parse_scope_specs_to_permissions(
     collection_id: uuid.UUID,
     holder_type: HolderType,

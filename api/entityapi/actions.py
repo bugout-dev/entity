@@ -126,6 +126,27 @@ def parse_entry_to_entity(
     )
 
 
+def parse_permission_naming(permission: str, to_entity: bool = True) -> str:
+    """
+    If to_entity is True:
+    "journals.entries.read" -> "collections.entities.read"
+    Else in opposite way.
+    """
+    if to_entity:
+        return permission.replace("journals", "collections").replace(
+            "entries", "entities"
+        )
+
+    return permission.replace("collections", "journals").replace("entities", "entries")
+
+
+def parse_entity_permission_to_journal(permission: str) -> str:
+    """
+    "collections.entities.read" -> "journals.entries.read"
+    """
+    return permission.replace("journals", "collections").replace("entries", "entities")
+
+
 def parse_scope_specs_to_permissions(
     collection_id: uuid.UUID,
     holder_type: HolderType,
@@ -138,7 +159,9 @@ def parse_scope_specs_to_permissions(
     """
     new_permissions = []
     for scope in journal_scopes.scopes:
-        new_permissions.append(scope.permission)
+        new_permissions.append(
+            parse_permission_naming(permission=scope.permission, to_entity=True)
+        )
         if holder_type != scope.holder_type:
             raise Exception(f"Unable to parse scope holder_type {scope.holder_type}")
         if holder_id != uuid.UUID(scope.holder_id):

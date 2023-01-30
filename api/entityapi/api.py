@@ -438,7 +438,10 @@ async def get_entity_collection_permissions_handler(
             data.EntityCollectionPermissions(
                 holder_type=permission.holder_type,
                 holder_id=permission.holder_id,
-                permissions=permission.permissions,
+                permissions=[
+                    actions.parse_permission_naming(permission=p, to_entity=True)
+                    for p in permission.permissions
+                ],
             )
             for permission in response.permissions
         ],
@@ -463,7 +466,10 @@ async def update_entity_collection_permissions_handler(
             journal_id=collection_id,
             holder_type=update_request.holder_type,
             holder_id=update_request.holder_id,
-            permission_list=update_request.permissions,
+            permission_list=[
+                actions.parse_permission_naming(permission=p, to_entity=False)
+                for p in update_request.permissions
+            ],
             auth_type=auth_type,
             headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
@@ -501,7 +507,10 @@ async def delete_entity_collection_permissions_handler(
             journal_id=collection_id,
             holder_type=delete_request.holder_type,
             holder_id=delete_request.holder_id,
-            permission_list=delete_request.permissions,
+            permission_list=[
+                actions.parse_permission_naming(permission=p, to_entity=False)
+                for p in delete_request.permissions
+            ],
             auth_type=auth_type,
             headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )

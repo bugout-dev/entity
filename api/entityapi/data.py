@@ -53,7 +53,7 @@ class EntityCollectionsResponse(BaseModel):
     collections: List[EntityCollectionResponse] = Field(default_factory=list)
 
 
-class EntityCollectionPermissionResponse(BaseModel):
+class EntityCollectionPermissions(BaseModel):
     holder_type: HolderType
     holder_id: uuid.UUID
     permissions: List[str] = Field(default_factory=list)
@@ -61,7 +61,7 @@ class EntityCollectionPermissionResponse(BaseModel):
 
 class EntityCollectionPermissionsResponse(BaseModel):
     collection_id: uuid.UUID
-    permissions: List[EntityCollectionPermissionResponse] = Field(default_factory=list)
+    permissions: List[EntityCollectionPermissions] = Field(default_factory=list)
 
 
 class Entity(BaseModel, extra=Extra.allow):

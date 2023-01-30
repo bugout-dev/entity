@@ -3,7 +3,12 @@ import logging
 import uuid
 from typing import Any, Collection, Dict, List, Optional, Tuple, Union, cast
 
-from bugout.data import BugoutJournalEntry, BugoutJournalEntryContent
+from bugout.data import (
+    BugoutJournalEntry,
+    BugoutJournalEntryContent,
+    BugoutJournalScopeSpecs,
+    HolderType,
+)
 from web3 import Web3
 
 from . import data
@@ -118,4 +123,32 @@ def parse_entry_to_entity(
         secondary_fields=json.loads(entry.content) if entry.content is not None else {},
         created_at=created_at,
         updated_at=updated_at,
+    )
+
+
+def parse_scope_specs_to_permissions(
+    collection_id: uuid.UUID,
+    holder_type: HolderType,
+    holder_id: uuid.UUID,
+    journal_scopes: BugoutJournalScopeSpecs,
+) -> data.EntityCollectionPermissionsResponse:
+    new_permissions = []
+    for scope in journal_scopes.scopes:
+        new_permissions.append(scope.permission)
+        if holder_type != scope.holder_type:
+            raise Exception(f"Unable to parse scope holder_type {scope.holder_type}")
+        if holder_id != uuid.UUID(scope.holder_id):
+            raise Exception(f"Unable to parse scope holder_id {scope.holder_id}")
+        if collection_id != scope.journal_id:
+            raise Exception(f"Unable to parse scope journal_id {scope.journal_id}")
+
+    return data.EntityCollectionPermissionsResponse(
+        collection_id=collection_id,
+        permissions=[
+            data.EntityCollectionPermissions(
+                holder_type=holder_type,
+                holder_id=holder_id,
+                permissions=new_permissions,
+            )
+        ],
     )

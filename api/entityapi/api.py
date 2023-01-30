@@ -412,7 +412,7 @@ async def delete_entity_handler(
     "/entity/collections/{collection_id}/permissions",
     response_model=data.EntityCollectionPermissionsResponse,
 )
-async def add_entity_collection_permissions_handler(
+async def get_entity_collection_permissions_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
 ) -> data.EntityCollectionPermissionsResponse:
@@ -435,7 +435,7 @@ async def add_entity_collection_permissions_handler(
     return data.EntityCollectionPermissionsResponse(
         collection_id=response.journal_id,
         permissions=[
-            data.EntityCollectionPermissionResponse(
+            data.EntityCollectionPermissions(
                 holder_type=permission.holder_type,
                 holder_id=permission.holder_id,
                 permissions=permission.permissions,
@@ -443,6 +443,84 @@ async def add_entity_collection_permissions_handler(
             for permission in response.permissions
         ],
     )
+
+
+@app.put(
+    "/entity/collections/{collection_id}/permissions",
+    response_model=data.EntityCollectionPermissionsResponse,
+)
+async def update_entity_collection_permissions_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+    update_request: data.EntityCollectionPermissions = Body(...),
+) -> data.EntityCollectionPermissionsResponse:
+    token = request.state.token
+    auth_type = request.state.auth_type
+
+    try:
+        response = bc.update_journal_scopes(
+            token=token,
+            journal_id=collection_id,
+            holder_type=update_request.holder_type,
+            holder_id=update_request.holder_id,
+            permission_list=update_request.permissions,
+            auth_type=auth_type,
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
+        )
+
+        new_entity_collection_permissions = actions.parse_scope_specs_to_permissions(
+            collection_id=collection_id,
+            holder_type=update_request.holder_type,
+            holder_id=update_request.holder_id,
+            journal_scopes=response,
+        )
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return new_entity_collection_permissions
+
+
+@app.delete(
+    "/entity/collections/{collection_id}/permissions",
+    response_model=data.EntityCollectionPermissionsResponse,
+)
+async def delete_entity_collection_permissions_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+    delete_request: data.EntityCollectionPermissions = Body(...),
+) -> data.EntityCollectionPermissionsResponse:
+    token = request.state.token
+    auth_type = request.state.auth_type
+
+    try:
+        response = bc.delete_journal_scopes(
+            token=token,
+            journal_id=collection_id,
+            holder_type=delete_request.holder_type,
+            holder_id=delete_request.holder_id,
+            permission_list=delete_request.permissions,
+            auth_type=auth_type,
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
+        )
+
+        removed_entity_collection_permissions = (
+            actions.parse_scope_specs_to_permissions(
+                collection_id=collection_id,
+                holder_type=delete_request.holder_type,
+                holder_id=delete_request.holder_id,
+                journal_scopes=response,
+            )
+        )
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return removed_entity_collection_permissions
 
 
 @app.get(

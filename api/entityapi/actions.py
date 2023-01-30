@@ -132,6 +132,10 @@ def parse_scope_specs_to_permissions(
     holder_id: uuid.UUID,
     journal_scopes: BugoutJournalScopeSpecs,
 ) -> data.EntityCollectionPermissionsResponse:
+    """
+    Convert Bugout journal entry scopes(permissions) to entity
+    collection permissions.
+    """
     new_permissions = []
     for scope in journal_scopes.scopes:
         new_permissions.append(scope.permission)

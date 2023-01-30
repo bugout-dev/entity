@@ -409,6 +409,43 @@ async def delete_entity_handler(
 
 
 @app.get(
+    "/entity/collections/{collection_id}/permissions",
+    response_model=data.EntityCollectionPermissionsResponse,
+)
+async def add_entity_collection_permissions_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+) -> data.EntityCollectionPermissionsResponse:
+    token = request.state.token
+    auth_type = request.state.auth_type
+
+    try:
+        response = bc.get_journal_permissions(
+            token=token,
+            journal_id=collection_id,
+            auth_type=auth_type,
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
+        )
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return data.EntityCollectionPermissionsResponse(
+        collection_id=response.journal_id,
+        permissions=[
+            data.EntityCollectionPermissionResponse(
+                holder_type=permission.holder_type,
+                holder_id=permission.holder_id,
+                permissions=permission.permissions,
+            )
+            for permission in response.permissions
+        ],
+    )
+
+
+@app.get(
     "/entity/collections/{collection_id}/search",
     response_model=data.EntitySearchResponse,
 )

@@ -1,7 +1,7 @@
 import json
 import logging
-from typing import Any, Collection, Dict, List, Optional, Tuple, Union, cast
 import uuid
+from typing import Any, Collection, Dict, List, Optional, Tuple, Union, cast
 
 from bugout.data import BugoutJournalEntry, BugoutJournalEntryContent
 from web3 import Web3

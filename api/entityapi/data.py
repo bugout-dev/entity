@@ -6,6 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Union
 
+from bugout.data import HolderType
 from pydantic import BaseModel, Extra, Field, root_validator
 
 
@@ -50,6 +51,17 @@ class EntityCollectionResponse(BaseModel):
 
 class EntityCollectionsResponse(BaseModel):
     collections: List[EntityCollectionResponse] = Field(default_factory=list)
+
+
+class EntityCollectionPermissions(BaseModel):
+    holder_type: HolderType
+    holder_id: uuid.UUID
+    permissions: List[str] = Field(default_factory=list)
+
+
+class EntityCollectionPermissionsResponse(BaseModel):
+    collection_id: uuid.UUID
+    permissions: List[EntityCollectionPermissions] = Field(default_factory=list)
 
 
 class Entity(BaseModel, extra=Extra.allow):

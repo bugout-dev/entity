@@ -51,7 +51,7 @@ app = FastAPI(
 
 
 @app.get("/collections", response_model=data.EntityCollectionsResponse)
-async def version_handler(
+async def public_list_entity_collections_handler(
     user_id: uuid.UUID = Query(...),
 ) -> data.EntityCollectionsResponse:
     """
@@ -73,3 +73,61 @@ async def version_handler(
             for journal in response.journals
         ]
     )
+
+
+@app.get(
+    "/collections/{collection_id}/search",
+    response_model=data.EntitySearchResponse,
+)
+async def public_search_entity_handler(
+    collection_id: uuid.UUID = Path(...),
+    required_field: List[str] = Query(default=[]),
+    secondary_field: List[str] = Query(default=[]),
+    filters: Optional[List[str]] = Query(None),
+    limit: int = Query(10),
+    offset: int = Query(0),
+    content: bool = Query(True),
+) -> data.EntitySearchResponse:
+    q = actions.to_journal_search_format(
+        required_field=required_field,
+        secondary_field=secondary_field,
+    )
+
+    try:
+        response: BugoutSearchResults = bc.public_search(
+            journal_id=collection_id,
+            query=q,
+            filters=filters,
+            limit=limit,
+            offset=offset,
+            content=content,
+        )
+
+        entities_response = data.EntitySearchResponse(
+            total_results=response.total_results,
+            offset=response.offset,
+            next_offset=response.next_offset,
+            max_score=response.max_score,
+            entities=[],
+        )
+        for entry in response.results:
+            entity_response = actions.parse_entry_to_entity(
+                entry=BugoutJournalEntry(
+                    id=entry.entry_url.rstrip("/").split("/")[-1],
+                    title=entry.title,
+                    content=entry.content,
+                    tags=entry.tags,
+                    created_at=entry.created_at,
+                    updated_at=entry.updated_at,
+                ),
+                collection_id=collection_id,
+            )
+            entities_response.entities.append(entity_response)
+
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return entities_response

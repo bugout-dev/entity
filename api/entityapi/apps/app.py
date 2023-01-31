@@ -494,19 +494,10 @@ async def search_entity_handler(
     token = request.state.token
     auth_type = request.state.auth_type
 
-    # Convert to regular journal search format
-    q = ""
-    cnt = len(required_field) + len(secondary_field)
-    for field in required_field:
-        q += f"tag:{str(field)}"
-        cnt -= 1
-        if cnt != 0:
-            q += " "
-    for field in secondary_field:
-        q += str(field)
-        cnt -= 1
-        if cnt != 0:
-            q += " "
+    q = actions.to_journal_search_format(
+        required_field=required_field,
+        secondary_field=secondary_field,
+    )
 
     try:
         response: BugoutSearchResults = bc.search(

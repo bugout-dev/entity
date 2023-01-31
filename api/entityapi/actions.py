@@ -172,3 +172,25 @@ def parse_scope_specs_to_permissions(
             )
         ],
     )
+
+
+def to_journal_search_format(
+    required_field: List[str], secondary_field: List[str]
+) -> str:
+    """
+    Convert to regular journal search format.
+    """
+    q = ""
+    cnt = len(required_field) + len(secondary_field)
+    for field in required_field:
+        q += f"tag:{str(field)}"
+        cnt -= 1
+        if cnt != 0:
+            q += " "
+    for field in secondary_field:
+        q += str(field)
+        cnt -= 1
+        if cnt != 0:
+            q += " "
+
+    return q

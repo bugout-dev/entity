@@ -30,27 +30,28 @@ from fastapi import (
 )
 
 from .. import actions, data
+from ..settings import DOCS_TARGET_PATH
 from ..settings import bugout_client as bc
 from ..version import VERSION
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 SUBMODULE_NAME = "public"
 
-tags_metadata = [{"name": "public", "description": "Public endpoints."}]
+tags_metadata = [{"name": "public", "description": "Public entity endpoints."}]
 
 app = FastAPI(
     title=f"Entity {SUBMODULE_NAME} HTTP API",
     description=f"Entity {SUBMODULE_NAME}  API endpoints.",
     version=VERSION,
     openapi_tags=tags_metadata,
-    openapi_url="/entity/public/openapi.json",
+    openapi_url="/openapi.json",
     docs_url=None,
+    redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
 
-@app.get("/collections", response_model=data.EntityCollectionsResponse)
+@app.get("/collections", tags=["public"], response_model=data.EntityCollectionsResponse)
 async def public_list_entity_collections_handler(
     user_id: uuid.UUID = Query(...),
 ) -> data.EntityCollectionsResponse:
@@ -77,6 +78,7 @@ async def public_list_entity_collections_handler(
 
 @app.get(
     "/collections/{collection_id}/search",
+    tags=["public"],
     response_model=data.EntitySearchResponse,
 )
 async def public_search_entity_handler(

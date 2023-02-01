@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import data
-from .apps.app import app as main_app
+from .apps.main import app as main_app
 from .apps.public import app as public_app
 from .settings import ORIGINS
 from .version import VERSION
@@ -20,7 +20,7 @@ app = FastAPI(
     description="Entity API endpoints.",
     version=VERSION,
     openapi_tags=tags_metadata,
-    openapi_url="/entity/openapi.json",
+    openapi_url=None,
     docs_url=None,
 )
 

@@ -18,20 +18,22 @@ from fastapi import Body, FastAPI, HTTPException, Path, Query, Request
 from web3login.middlewares.fastapi import AuthorizationCheckMiddleware
 
 from .. import actions, data
-from ..settings import BUGOUT_APPLICATION_ID_HEADER, MOONSTREAM_APPLICATION_ID, ORIGINS
+from ..settings import BUGOUT_APPLICATION_ID_HEADER, MOONSTREAM_APPLICATION_ID, DOCS_TARGET_PATH
 from ..settings import bugout_client as bc
 from ..version import VERSION
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-tags_metadata = [{"name": "time", "description": "Server timestamp endpoints."}]
+tags_metadata = [
+    {"name": "main", "description": "Main entity endpoints."},
+    {"name": "bulk", "description": "Bulk entity operations."},
+]
 
 whitelist_paths: Dict[str, str] = {}
 whitelist_paths.update(
     {
-        "/docs": "GET",
-        "/openapi.json": "GET",
+        "/entity/docs": "GET",
+        "/entity/openapi.json": "GET",
     }
 )
 
@@ -40,8 +42,9 @@ app = FastAPI(
     description="Entity API endpoints.",
     version=VERSION,
     openapi_tags=tags_metadata,
-    openapi_url="/entity/openapi.json",
+    openapi_url="/openapi.json",
     docs_url=None,
+    redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
 app.add_middleware(
@@ -52,7 +55,7 @@ app.add_middleware(
 )
 
 
-@app.post("/collections", response_model=data.EntityCollectionResponse)
+@app.post("/collections", tags=["main"], response_model=data.EntityCollectionResponse)
 async def add_entity_collection_handler(
     request: Request,
     create_request: data.CreateEntityCollectionAPIRequest = Body(...),
@@ -76,7 +79,7 @@ async def add_entity_collection_handler(
     return data.EntityCollectionResponse(name=response.name, collection_id=response.id)
 
 
-@app.get("/collections", response_model=data.EntityCollectionsResponse)
+@app.get("/collections", tags=["main"], response_model=data.EntityCollectionsResponse)
 async def list_entity_collections_handler(
     request: Request,
 ) -> data.EntityCollectionsResponse:
@@ -104,7 +107,9 @@ async def list_entity_collections_handler(
 
 
 @app.delete(
-    "/collections/{collection_id}", response_model=data.EntityCollectionResponse
+    "/collections/{collection_id}",
+    tags=["main"],
+    response_model=data.EntityCollectionResponse,
 )
 async def delete_entity_collection_handler(
     request: Request,
@@ -129,7 +134,11 @@ async def delete_entity_collection_handler(
     return data.EntityCollectionResponse(name=response.name, collection_id=response.id)
 
 
-@app.post("/collections/{collection_id}/entities", response_model=data.EntityResponse)
+@app.post(
+    "/collections/{collection_id}/entities",
+    tags=["main"],
+    response_model=data.EntityResponse,
+)
 async def add_entity_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
@@ -167,7 +176,11 @@ async def add_entity_handler(
     return entity_response
 
 
-@app.post("/collections/{collection_id}/bulk", response_model=data.EntitiesResponse)
+@app.post(
+    "/collections/{collection_id}/bulk",
+    tags=["main", "bulk"],
+    response_model=data.EntitiesResponse,
+)
 async def add_entity_bulk_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
@@ -215,6 +228,7 @@ async def add_entity_bulk_handler(
 
 @app.get(
     "/collections/{collection_id}/entities/{entity_id}",
+    tags=["main"],
     response_model=data.EntityResponse,
 )
 async def get_entity_handler(
@@ -252,6 +266,7 @@ async def get_entity_handler(
 
 @app.put(
     "/collections/{collection_id}/entities/{entity_id}",
+    tags=["main"],
     response_model=data.EntityResponse,
 )
 async def update_entity_handler(
@@ -292,7 +307,11 @@ async def update_entity_handler(
     return entity_response
 
 
-@app.get("/collections/{collection_id}/entities", response_model=data.EntitiesResponse)
+@app.get(
+    "/collections/{collection_id}/entities",
+    tags=["main"],
+    response_model=data.EntitiesResponse,
+)
 async def get_entities_handler(
     request: Request,
     collection_id: uuid.UUID = Path(...),
@@ -326,6 +345,7 @@ async def get_entities_handler(
 
 @app.delete(
     "/collections/{collection_id}/entities/{entity_id}",
+    tags=["main"],
     response_model=data.EntityResponse,
 )
 async def delete_entity_handler(
@@ -355,6 +375,7 @@ async def delete_entity_handler(
 
 @app.get(
     "/collections/{collection_id}/permissions",
+    tags=["main"],
     response_model=data.EntityCollectionPermissionsResponse,
 )
 async def get_entity_collection_permissions_handler(
@@ -395,6 +416,7 @@ async def get_entity_collection_permissions_handler(
 
 @app.put(
     "/collections/{collection_id}/permissions",
+    tags=["main"],
     response_model=data.EntityCollectionPermissionsResponse,
 )
 async def update_entity_collection_permissions_handler(
@@ -436,6 +458,7 @@ async def update_entity_collection_permissions_handler(
 
 @app.delete(
     "/collections/{collection_id}/permissions",
+    tags=["main"],
     response_model=data.EntityCollectionPermissionsResponse,
 )
 async def delete_entity_collection_permissions_handler(
@@ -479,6 +502,7 @@ async def delete_entity_collection_permissions_handler(
 
 @app.get(
     "/collections/{collection_id}/search",
+    tags=["main"],
     response_model=data.EntitySearchResponse,
 )
 async def search_entity_handler(

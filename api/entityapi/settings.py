@@ -2,6 +2,8 @@ import os
 
 from bugout.app import Bugout
 
+DOCS_TARGET_PATH = "docs"
+
 # Origin
 RAW_ORIGINS = os.environ.get("ENTITY_CORS_ALLOWED_ORIGINS")
 if RAW_ORIGINS is None:

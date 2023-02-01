@@ -1,33 +1,13 @@
 """
 Entity public API endpoints.
 """
-import json
 import logging
-import time
 import uuid
-from typing import Any, Collection, Dict, List, Optional, Union
+from typing import List, Optional
 
-from bugout.data import (
-    BugoutJournalEntries,
-    BugoutJournalEntry,
-    BugoutJournalEntryContent,
-    BugoutSearchResults,
-)
+from bugout.data import BugoutJournalEntry, BugoutSearchResults
 from bugout.exceptions import BugoutResponseException
-from bugout.journal import TagsAction
-from fastapi import (
-    BackgroundTasks,
-    Body,
-    Depends,
-    FastAPI,
-    Form,
-    HTTPException,
-    Path,
-    Query,
-    Request,
-    Response,
-    status,
-)
+from fastapi import FastAPI, HTTPException, Path, Query
 
 from .. import actions, data
 from ..settings import DOCS_TARGET_PATH
@@ -52,7 +32,7 @@ app = FastAPI(
 
 
 @app.get("/collections", tags=["public"], response_model=data.EntityCollectionsResponse)
-async def public_list_entity_collections_handler(
+async def list_public_entity_collections_handler(
     user_id: uuid.UUID = Query(...),
 ) -> data.EntityCollectionsResponse:
     """
@@ -74,6 +54,113 @@ async def public_list_entity_collections_handler(
             for journal in response.journals
         ]
     )
+
+
+@app.get(
+    "/collections/{collection_id}",
+    tags=["public"],
+    response_model=data.EntityCollectionResponse,
+)
+async def get_public_entity_collection_handler(
+    collection_id: uuid.UUID = Path(...),
+) -> data.EntityCollectionResponse:
+    """
+    Get public collections.
+    """
+    try:
+        response = bc.get_public_journal(
+            journal_id=collection_id,
+        )
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return data.EntityCollectionResponse(name=response.name, collection_id=response.id)
+
+
+@app.get(
+    "/collections/{collection_id}/entities",
+    tags=["public"],
+    response_model=data.EntitiesResponse,
+)
+async def get_public_entities_handler(
+    collection_id: uuid.UUID = Path(...),
+) -> data.EntitiesResponse:
+    """
+    Get public entities.
+    """
+    try:
+        response = bc.get_public_journal_entries(journal_id=collection_id)
+
+        entities_response = data.EntitiesResponse(entities=[])
+        for entry in response.entries:
+            entity_response = actions.parse_entry_to_entity(
+                entry=entry, collection_id=collection_id
+            )
+            entities_response.entities.append(entity_response)
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return entities_response
+
+
+@app.get(
+    "/collections/{collection_id}/entities/{entity_id}",
+    tags=["public"],
+    response_model=data.EntityResponse,
+)
+async def get_public_entity_handler(
+    collection_id: uuid.UUID = Path(...),
+    entity_id: uuid.UUID = Path(...),
+) -> data.EntityResponse:
+    """
+    Get public entity.
+    """
+    try:
+        response = bc.get_public_journal_entry(
+            journal_id=collection_id, entry_id=entity_id
+        )
+
+        entity_response = actions.parse_entry_to_entity(
+            entry=response, collection_id=collection_id
+        )
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return entity_response
+
+
+@app.put(
+    "/collections/{collection_id}/entities/{entity_id}",
+    tags=["public"],
+    response_model=List[str],
+)
+async def touch_public_entity_handler(
+    collection_id: uuid.UUID = Path(...),
+    entity_id: uuid.UUID = Path(...),
+) -> List[str]:
+    """
+    Touch public entity.
+    """
+    try:
+        response = bc.touch_public_journal_entry(
+            journal_id=collection_id, entry_id=entity_id
+        )
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return response
 
 
 @app.get(

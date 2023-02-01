@@ -18,7 +18,11 @@ from fastapi import Body, FastAPI, HTTPException, Path, Query, Request
 from web3login.middlewares.fastapi import AuthorizationCheckMiddleware
 
 from .. import actions, data
-from ..settings import BUGOUT_APPLICATION_ID_HEADER, MOONSTREAM_APPLICATION_ID, DOCS_TARGET_PATH
+from ..settings import (
+    BUGOUT_APPLICATION_ID_HEADER,
+    DOCS_TARGET_PATH,
+    MOONSTREAM_APPLICATION_ID,
+)
 from ..settings import bugout_client as bc
 from ..version import VERSION
 

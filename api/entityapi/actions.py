@@ -183,7 +183,12 @@ def to_journal_search_format(
     q = ""
     cnt = len(required_field) + len(secondary_field)
     for field in required_field:
-        q += f"tag:{str(field)}"
+        field = str(field)
+        negative_prefix = ""
+        if field.startswith("!"):
+            negative_prefix = "!"
+            field = field[1:]
+        q += f"{negative_prefix}tag:{field}"
         cnt -= 1
         if cnt != 0:
             q += " "

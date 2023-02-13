@@ -12,8 +12,15 @@ from bugout.data import (
 from web3 import Web3
 
 from . import data
+from .reporter import ExceptionWithReporting
 
 logger = logging.getLogger(__name__)
+
+
+class UnparsableJournalEntry(ExceptionWithReporting):
+    """
+    Unable to parse journals entry.
+    """
 
 
 def to_json_types(value):
@@ -30,7 +37,7 @@ def to_json_types(value):
 
 def parse_entity_to_entry(
     create_entity: data.Entity,
-) -> Tuple[str, List[str], Dict[str, Any]]:
+) -> Tuple[str, List[str], Dict[str, Any], str]:
     """
     Parse Entity create request structure to Bugout journal scheme.
     """
@@ -38,12 +45,15 @@ def parse_entity_to_entry(
     tags: List[str] = []
     content: Dict[str, Any] = {}
 
+    unknown_blockchain_address = ""
+
     for field, vals in create_entity._iter():
         if field == "address":
             try:
                 address = Web3.toChecksumAddress(cast(str, vals))
             except Exception:
-                logger.info(f"Unknown type of web3 address {vals}")
+                logger.info(f"Unknown type of blockchain address {vals}")
+                unknown_blockchain_address = vals
                 address = vals
             title = f"{address} - {title}"
             tags.append(f"{field}:{address}")
@@ -73,7 +83,7 @@ def parse_entity_to_entry(
             for k, v in vals.items():
                 content[k] = v
 
-    return title, tags, content
+    return title, tags, content, unknown_blockchain_address
 
 
 def parse_entry_to_entity(
@@ -88,9 +98,11 @@ def parse_entry_to_entity(
         if type(entry) == BugoutJournalEntry:
             entity_id = entry.id
         else:
-            raise Exception("Unable to parse entity_id")
+            raise UnparsableJournalEntry("Unable to parse entry id")
     if entry.title is None:
-        raise Exception(f"Unable to parse entry title")
+        raise UnparsableJournalEntry(
+            f"Unable to parse entry title at entry: {str(entry.id)}"
+        )
     name = " - ".join(entry.title.split(" - ")[1:])
 
     address: Optional[str] = None

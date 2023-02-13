@@ -11,6 +11,7 @@ from bugout.exceptions import BugoutResponseException
 from fastapi import Body, FastAPI, HTTPException, Path, Query
 
 from .. import actions, data
+from ..reporter import humbug_reporter
 from ..settings import DOCS_TARGET_PATH
 from ..settings import bugout_client as bc
 from ..version import VERSION
@@ -176,10 +177,15 @@ async def add_public_entity_handler(
     """
     Create public entity.
     """
+    unknown_blockchain_address = ""
+
     try:
-        title, tags, content = actions.parse_entity_to_entry(
-            create_entity=create_request
-        )
+        (
+            title,
+            tags,
+            content,
+            unknown_blockchain_address,
+        ) = actions.parse_entity_to_entry(create_entity=create_request)
 
         response = bc.create_public_journal_entry(
             journal_id=collection_id,
@@ -194,9 +200,22 @@ async def add_public_entity_handler(
         )
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except actions.UnparsableJournalEntry:
+        raise HTTPException(status_code=500, detail="Unable to form entity")
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=500)
+
+    if unknown_blockchain_address != "":
+        humbug_reporter.custom_report(
+            title="Unknown type of blockchain address",
+            content=f"Added public entity with unknown blockchain addresses "
+            f"`{unknown_blockchain_address}` to collection `{collection_id}` entity `{response.id}`",
+            tags=[
+                f"collection_id:{collection_id}",
+                f"unknown_blockchain_address:{unknown_blockchain_address}",
+            ],
+        )
 
     return entity_response
 

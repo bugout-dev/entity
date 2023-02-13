@@ -18,6 +18,7 @@ from fastapi import Body, FastAPI, HTTPException, Path, Query, Request
 from web3login.middlewares.fastapi import AuthorizationCheckMiddleware
 
 from .. import actions, data
+from ..reporter import humbug_reporter
 from ..settings import (
     BUGOUT_APPLICATION_ID_HEADER,
     DOCS_TARGET_PATH,
@@ -151,10 +152,14 @@ async def add_entity_handler(
     token = request.state.token
     auth_type = request.state.auth_type
 
+    unknown_blockchain_address = ""
     try:
-        title, tags, content = actions.parse_entity_to_entry(
-            create_entity=create_request
-        )
+        (
+            title,
+            tags,
+            content,
+            unknown_blockchain_address,
+        ) = actions.parse_entity_to_entry(create_entity=create_request)
 
         response: BugoutJournalEntry = bc.create_entry(
             token=token,
@@ -173,9 +178,22 @@ async def add_entity_handler(
 
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except actions.UnparsableJournalEntry:
+        raise HTTPException(status_code=500, detail="Unable to form entity")
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=500)
+
+    if unknown_blockchain_address != "":
+        humbug_reporter.custom_report(
+            title="Unknown type of blockchain address",
+            content=f"Added entity with unknown blockchain addresses "
+            f"`{unknown_blockchain_address}` to collection `{collection_id}` entity `{response.id}`",
+            tags=[
+                f"collection_id:{collection_id}",
+                f"unknown_blockchain_address:{unknown_blockchain_address}",
+            ],
+        )
 
     return entity_response
 
@@ -193,10 +211,16 @@ async def add_entity_bulk_handler(
     token = request.state.token
     auth_type = request.state.auth_type
 
+    unknown_blockchain_address = ""
     try:
         create_entries = []
         for entity in create_request:
-            title, tags, content = actions.parse_entity_to_entry(create_entity=entity)
+            (
+                title,
+                tags,
+                content,
+                unknown_blockchain_address,
+            ) = actions.parse_entity_to_entry(create_entity=entity)
             create_entries.append(
                 {
                     "title": title,
@@ -223,9 +247,21 @@ async def add_entity_bulk_handler(
 
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except actions.UnparsableJournalEntry:
+        raise HTTPException(status_code=500, detail="Unable to form entity")
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=500)
+
+    if unknown_blockchain_address != "":
+        humbug_reporter.custom_report(
+            title="Unknown type of blockchain address - pack",
+            content=f"Added pack of entities with unknown blockchain addresses to collection `{collection_id}`",
+            tags=[
+                f"collection_id:{collection_id}",
+                f"unknown_blockchain_address:pack",
+            ],
+        )
 
     return entities_response
 
@@ -261,6 +297,8 @@ async def get_entity_handler(
 
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except actions.UnparsableJournalEntry:
+        raise HTTPException(status_code=500, detail="Unable to form entity")
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=500)
@@ -283,7 +321,7 @@ async def update_entity_handler(
     auth_type = request.state.auth_type
 
     try:
-        title, tags, content = actions.parse_entity_to_entry(
+        title, tags, content, _ = actions.parse_entity_to_entry(
             create_entity=update_request
         )
         response: BugoutJournalEntryContent = bc.update_entry_content(
@@ -304,6 +342,8 @@ async def update_entity_handler(
 
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except actions.UnparsableJournalEntry:
+        raise HTTPException(status_code=500, detail="Unable to form entity")
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=500)
@@ -340,6 +380,8 @@ async def get_entities_handler(
 
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except actions.UnparsableJournalEntry:
+        raise HTTPException(status_code=500, detail="Unable to form entity")
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=500)
@@ -563,6 +605,8 @@ async def search_entity_handler(
 
     except BugoutResponseException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except actions.UnparsableJournalEntry:
+        raise HTTPException(status_code=500, detail="Unable to form entity")
     except Exception as e:
         logger.error(e)
         raise HTTPException(status_code=500)

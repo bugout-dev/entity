@@ -28,3 +28,8 @@ else:
 MOONSTREAM_APPLICATION_ID = os.environ.get("MOONSTREAM_APPLICATION_ID", "")
 if MOONSTREAM_APPLICATION_ID == "":
     raise ValueError("MOONSTREAM_APPLICATION_ID environment variable must be set")
+
+# Humbug reporting
+ENTITY_HUMBUG_REPORTS_BUGOUT_TOKEN = os.environ.get(
+    "ENTITY_HUMBUG_REPORTS_BUGOUT_TOKEN"
+)

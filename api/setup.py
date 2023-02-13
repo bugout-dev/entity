@@ -14,6 +14,7 @@ setup(
     install_requires=[
         "bugout>=0.2.5",
         "fastapi",
+        "humbug>=0.2.7",
         "psycopg2-binary",
         "pydantic",
         "sqlalchemy",

@@ -28,3 +28,12 @@ else:
 MOONSTREAM_APPLICATION_ID = os.environ.get("MOONSTREAM_APPLICATION_ID", "")
 if MOONSTREAM_APPLICATION_ID == "":
     raise ValueError("MOONSTREAM_APPLICATION_ID environment variable must be set")
+
+# ETHDenver event
+ETHDENVER_EVENT_CLAIMANT_PASSWORD = os.environ.get(
+    "ETHDENVER_EVENT_CLAIMANT_PASSWORD", ""
+)
+if ETHDENVER_EVENT_CLAIMANT_PASSWORD == "":
+    raise ValueError(
+        "ETHDENVER_EVENT_CLAIMANT_PASSWORD environment variable must be set"
+    )

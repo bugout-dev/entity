@@ -8,10 +8,10 @@ from typing import List, Optional
 
 from bugout.data import BugoutJournalEntry, BugoutSearchResults
 from bugout.exceptions import BugoutResponseException
-from fastapi import Body, FastAPI, HTTPException, Path, Query
+from fastapi import Body, FastAPI, Form, HTTPException, Path, Query
 
 from .. import actions, data
-from ..settings import DOCS_TARGET_PATH
+from ..settings import DOCS_TARGET_PATH, ETHDENVER_EVENT_CLAIMANT_PASSWORD
 from ..settings import bugout_client as bc
 from ..version import VERSION
 
@@ -165,20 +165,31 @@ async def touch_public_entity_handler(
 
 
 @app.post(
-    "/collections/{collection_id}/entities",
+    "/collections/{collection_id}/ethdenver",
     tags=["public"],
     response_model=data.EntityResponse,
 )
-async def add_public_entity_handler(
+async def add_public_entity_for_ethdenver_event_handler(
     collection_id: uuid.UUID = Path(...),
-    create_request: data.Entity = Body(...),
+    address: str = Form(None),
+    email: str = Form(None),
+    discord: str = Form(None),
+    password: str = Form(None),
 ) -> data.EntityResponse:
     """
-    Create public entity.
+    Create public entity during ETH Denver event.
     """
+    if password != ETHDENVER_EVENT_CLAIMANT_PASSWORD:
+        raise HTTPException(status_code=403, detail="Provided incorrect password")
+
     try:
         title, tags, content = actions.parse_entity_to_entry(
-            create_entity=create_request
+            create_entity=data.Entity(
+                address=address,
+                blockchain="unknown",
+                name="ETHDenver claimant",
+                required_fields=[{"email": email, "discord": discord}],
+            )
         )
 
         response = bc.create_public_journal_entry(

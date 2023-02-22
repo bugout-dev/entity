@@ -16,6 +16,7 @@ setup(
         "fastapi",
         "psycopg2-binary",
         "pydantic",
+        "python-multipart",
         "sqlalchemy",
         "uvicorn",
         "web3login>=0.0.4",

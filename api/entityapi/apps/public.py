@@ -8,10 +8,10 @@ from typing import List, Optional
 
 from bugout.data import BugoutJournalEntry, BugoutSearchResults
 from bugout.exceptions import BugoutResponseException
-from fastapi import Body, FastAPI, HTTPException, Path, Query
+from fastapi import Body, FastAPI, Form, HTTPException, Path, Query
 
 from .. import actions, data
-from ..settings import DOCS_TARGET_PATH
+from ..settings import DOCS_TARGET_PATH, ETHDENVER_EVENT_CLAIMANT_PASSWORD
 from ..settings import bugout_client as bc
 from ..version import VERSION
 
@@ -179,6 +179,62 @@ async def add_public_entity_handler(
     try:
         title, tags, content = actions.parse_entity_to_entry(
             create_entity=create_request
+        )
+
+        response = bc.create_public_journal_entry(
+            journal_id=collection_id,
+            title=title,
+            content=json.dumps(content),
+            tags=tags,
+            context_type="entity",
+        )
+
+        entity_response = actions.parse_entry_to_entity(
+            entry=response, collection_id=collection_id
+        )
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return entity_response
+
+
+@app.post(
+    "/collections/{collection_id}/entities/protected",
+    tags=["public"],
+    response_model=data.EntityResponse,
+)
+async def add_public_entity_password_protected_handler(
+    collection_id: uuid.UUID = Path(...),
+    address: str = Form(...),
+    blockchain: str = Form(...),
+    name: str = Form(...),
+    password: str = Form(...),
+    email: str = Form(None),
+    discord: str = Form(None),
+) -> data.EntityResponse:
+    """
+    Create public entity if password specified.
+    """
+    if password != ETHDENVER_EVENT_CLAIMANT_PASSWORD:
+        raise HTTPException(status_code=403, detail="Provided incorrect password")
+
+    required_fields = [{"protected": "true"}]
+    if email is not None:
+        required_fields.append({"email": email})
+    if discord is not None:
+        required_fields.append({"discord": discord})
+
+    try:
+        title, tags, content = actions.parse_entity_to_entry(
+            create_entity=data.Entity(
+                address=address,
+                blockchain=blockchain,
+                name=name,
+                required_fields=required_fields,
+            )
         )
 
         response = bc.create_public_journal_entry(

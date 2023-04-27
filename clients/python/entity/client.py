@@ -1,7 +1,6 @@
 import uuid
-from typing import Any, Dict, List, Union
-
-import requests
+from typing import Any, Dict, List, Union, Optional
+import requests  # type: ignore
 
 from . import data, exceptions
 from .settings import ENTITY_API_URL, ENTITY_REQUEST_TIMEOUT
@@ -158,7 +157,7 @@ class Entity:
             "blockchain": blockchain,
             "name": name,
             "required_fields": required_fields,
-            "secondary_fields": secondary_fields,
+            **secondary_fields,
         }
         result = self._call(
             method=data.Method.POST,
@@ -228,6 +227,39 @@ class Entity:
         )
         return data.EntitiesResponse(**result)
 
+    def update_entity(
+        self,
+        token: Union[str, uuid.UUID],
+        collection_id: Union[str, uuid.UUID],
+        entity_id: Union[str, uuid.UUID],
+        address: str,
+        blockchain: str,
+        name: str,
+        required_fields: List[Dict[str, Union[str, bool, int, list]]] = [],
+        secondary_fields: Dict[str, Any] = {},
+        auth_type: data.AuthType = data.AuthType.bearer,
+        timeout: float = ENTITY_REQUEST_TIMEOUT,
+    ) -> data.EntityResponse:
+        headers = {
+            "Authorization": f"{auth_type.value} {token}",
+        }
+        payload = {
+            "address": address,
+            "blockchain": blockchain,
+            "name": name,
+            "required_fields": required_fields,
+            **secondary_fields,
+        }
+        result = self._call(
+            method=data.Method.PUT,
+            url=f"{self.api.endpoints[ENDPOINT_COLLECTIONS]}/{str(collection_id)}/entities/{str(entity_id)}",
+            headers=headers,
+            json=payload,
+            timeout=timeout,
+        )
+
+        return data.EntityResponse(**result)
+
     def delete_entity(
         self,
         token: Union[str, uuid.UUID],
@@ -247,3 +279,40 @@ class Entity:
         )
 
         return data.EntityResponse(**result)
+
+    def search_entities(
+        self,
+        token: Union[str, uuid.UUID],
+        collection_id: Union[str, uuid.UUID],
+        required_field: List[str] = [],
+        secondary_field: List[str] = [],
+        filters: Optional[List[str]] = None,
+        limit: int = 10,
+        offset: int = 0,
+        content: bool = True,
+        timeout: float = ENTITY_REQUEST_TIMEOUT,
+    ) -> data.EntitySearchResponse:
+
+        headers = {
+            "Authorization": f"{data.AuthType.bearer.value} {token}",
+        }
+
+        params = {
+            "required_field": required_field,
+            "secondary_field": secondary_field,
+            "limit": limit,
+            "offset": offset,
+            "content": content,
+        }
+
+        if filters:
+            params["filters"] = filters
+
+        result = self._call(
+            method=data.Method.GET,
+            url=f"{self.api.endpoints[ENDPOINT_COLLECTIONS]}/{str(collection_id)}{ENDPOINT_SEARCH}",
+            headers=headers,
+            timeout=timeout,
+        )
+
+        return data.EntitySearchResponse(**result)

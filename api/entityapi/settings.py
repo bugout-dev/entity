@@ -2,6 +2,8 @@ import os
 
 from bugout.app import Bugout
 
+DOCS_TARGET_PATH = "docs"
+
 # Origin
 RAW_ORIGINS = os.environ.get("ENTITY_CORS_ALLOWED_ORIGINS")
 if RAW_ORIGINS is None:
@@ -26,3 +28,12 @@ else:
 MOONSTREAM_APPLICATION_ID = os.environ.get("MOONSTREAM_APPLICATION_ID", "")
 if MOONSTREAM_APPLICATION_ID == "":
     raise ValueError("MOONSTREAM_APPLICATION_ID environment variable must be set")
+
+# ETHDenver event
+ETHDENVER_EVENT_CLAIMANT_PASSWORD = os.environ.get(
+    "ETHDENVER_EVENT_CLAIMANT_PASSWORD", ""
+)
+if ETHDENVER_EVENT_CLAIMANT_PASSWORD == "":
+    raise ValueError(
+        "ETHDENVER_EVENT_CLAIMANT_PASSWORD environment variable must be set"
+    )

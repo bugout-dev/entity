@@ -1,64 +1,65 @@
+"""
+Entity main API endpoints.
+"""
+import json
 import logging
-import time
+import uuid
+from typing import Dict, List, Optional
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from bugout.data import (
+    BugoutJournalEntries,
+    BugoutJournalEntry,
+    BugoutJournalEntryContent,
+    BugoutSearchResults,
+)
+from bugout.exceptions import BugoutResponseException
+from bugout.journal import TagsAction
+from fastapi import Body, FastAPI, HTTPException, Path, Query, Request
+from web3login.middlewares.fastapi import AuthorizationCheckMiddleware
 
-from . import data
-from .apps.main import app as main_app
-from .apps.public import app as public_app
-from .settings import ORIGINS
-from .version import VERSION
+from .. import actions, data
+from ..settings import (
+    BUGOUT_APPLICATION_ID_HEADER,
+    DOCS_TARGET_PATH,
+    MOONSTREAM_APPLICATION_ID,
+)
+from ..settings import bugout_client as bc
+from ..version import VERSION
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-tags_metadata = [{"name": "time", "description": "Server timestamp endpoints."}]
+tags_metadata = [
+    {"name": "main", "description": "Main entity endpoints."},
+    {"name": "bulk", "description": "Bulk entity operations."},
+]
+
+whitelist_paths: Dict[str, str] = {}
+whitelist_paths.update(
+    {
+        "/entity/docs": "GET",
+        "/entity/openapi.json": "GET",
+    }
+)
 
 app = FastAPI(
     title=f"Entity HTTP API",
     description="Entity API endpoints.",
     version=VERSION,
     openapi_tags=tags_metadata,
-    openapi_url=None,
+    openapi_url="/openapi.json",
     docs_url=None,
+    redoc_url=f"/{DOCS_TARGET_PATH}",
 )
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    AuthorizationCheckMiddleware,
+    whitelist=whitelist_paths,
+    application=MOONSTREAM_APPLICATION_ID,
+    auth_types=["bearer", "web3"],
 )
 
 
-@app.get("/entity/ping", response_model=data.PingResponse)
-async def ping_handler() -> data.PingResponse:
-    """
-    Check server status.
-    """
-    return data.PingResponse(status="ok")
-
-
-@app.get("/entity/now", tags=["time"])
-async def now_handler() -> data.NowResponse:
-    """
-    Get server current time.
-    """
-    return data.NowResponse(epoch_time=time.time())
-
-
-@app.get("/entity/version", response_model=data.VersionResponse)
-async def version_handler() -> data.VersionResponse:
-    """
-    Check server version.
-    """
-    return data.VersionResponse(version=VERSION)
-
-
-<<<<<<< HEAD
-@app.post("/entity/collections", response_model=data.EntityCollectionResponse)
+@app.post("/collections", tags=["main"], response_model=data.EntityCollectionResponse)
 async def add_entity_collection_handler(
     request: Request,
     create_request: data.CreateEntityCollectionAPIRequest = Body(...),
@@ -74,7 +75,6 @@ async def add_entity_collection_handler(
             headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
     except BugoutResponseException as e:
-        logger.error(e)
         raise HTTPException(status_code=e.status_code, detail=e.detail)
     except Exception as e:
         logger.error(e)
@@ -83,7 +83,7 @@ async def add_entity_collection_handler(
     return data.EntityCollectionResponse(name=response.name, collection_id=response.id)
 
 
-@app.get("/entity/collections", response_model=data.EntityCollectionsResponse)
+@app.get("/collections", tags=["main"], response_model=data.EntityCollectionsResponse)
 async def list_entity_collections_handler(
     request: Request,
 ) -> data.EntityCollectionsResponse:
@@ -111,7 +111,9 @@ async def list_entity_collections_handler(
 
 
 @app.delete(
-    "/entity/collections/{collection_id}", response_model=data.EntityCollectionResponse
+    "/collections/{collection_id}",
+    tags=["main"],
+    response_model=data.EntityCollectionResponse,
 )
 async def delete_entity_collection_handler(
     request: Request,
@@ -137,7 +139,9 @@ async def delete_entity_collection_handler(
 
 
 @app.post(
-    "/entity/collections/{collection_id}/entities", response_model=data.EntityResponse
+    "/collections/{collection_id}/entities",
+    tags=["main"],
+    response_model=data.EntityResponse,
 )
 async def add_entity_handler(
     request: Request,
@@ -177,7 +181,9 @@ async def add_entity_handler(
 
 
 @app.post(
-    "/entity/collections/{collection_id}/bulk", response_model=data.EntitiesResponse
+    "/collections/{collection_id}/bulk",
+    tags=["main", "bulk"],
+    response_model=data.EntitiesResponse,
 )
 async def add_entity_bulk_handler(
     request: Request,
@@ -225,7 +231,8 @@ async def add_entity_bulk_handler(
 
 
 @app.get(
-    "/entity/collections/{collection_id}/entities/{entity_id}",
+    "/collections/{collection_id}/entities/{entity_id}",
+    tags=["main"],
     response_model=data.EntityResponse,
 )
 async def get_entity_handler(
@@ -262,7 +269,8 @@ async def get_entity_handler(
 
 
 @app.put(
-    "/entity/collections/{collection_id}/entities/{entity_id}",
+    "/collections/{collection_id}/entities/{entity_id}",
+    tags=["main"],
     response_model=data.EntityResponse,
 )
 async def update_entity_handler(
@@ -304,7 +312,9 @@ async def update_entity_handler(
 
 
 @app.get(
-    "/entity/collections/{collection_id}/entities", response_model=data.EntitiesResponse
+    "/collections/{collection_id}/entities",
+    tags=["main"],
+    response_model=data.EntitiesResponse,
 )
 async def get_entities_handler(
     request: Request,
@@ -338,7 +348,8 @@ async def get_entities_handler(
 
 
 @app.delete(
-    "/entity/collections/{collection_id}/entities/{entity_id}",
+    "/collections/{collection_id}/entities/{entity_id}",
+    tags=["main"],
     response_model=data.EntityResponse,
 )
 async def delete_entity_handler(
@@ -367,7 +378,135 @@ async def delete_entity_handler(
 
 
 @app.get(
-    "/entity/collections/{collection_id}/search",
+    "/collections/{collection_id}/permissions",
+    tags=["main"],
+    response_model=data.EntityCollectionPermissionsResponse,
+)
+async def get_entity_collection_permissions_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+) -> data.EntityCollectionPermissionsResponse:
+    token = request.state.token
+    auth_type = request.state.auth_type
+
+    try:
+        response = bc.get_journal_permissions(
+            token=token,
+            journal_id=collection_id,
+            auth_type=auth_type,
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
+        )
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return data.EntityCollectionPermissionsResponse(
+        collection_id=response.journal_id,
+        permissions=[
+            data.EntityCollectionPermissions(
+                holder_type=permission.holder_type,
+                holder_id=permission.holder_id,
+                permissions=[
+                    actions.parse_permission_naming(permission=p, to_entity=True)
+                    for p in permission.permissions
+                ],
+            )
+            for permission in response.permissions
+        ],
+    )
+
+
+@app.put(
+    "/collections/{collection_id}/permissions",
+    tags=["main"],
+    response_model=data.EntityCollectionPermissionsResponse,
+)
+async def update_entity_collection_permissions_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+    update_request: data.EntityCollectionPermissions = Body(...),
+) -> data.EntityCollectionPermissionsResponse:
+    token = request.state.token
+    auth_type = request.state.auth_type
+
+    try:
+        response = bc.update_journal_scopes(
+            token=token,
+            journal_id=collection_id,
+            holder_type=update_request.holder_type,
+            holder_id=update_request.holder_id,
+            permission_list=[
+                actions.parse_permission_naming(permission=p, to_entity=False)
+                for p in update_request.permissions
+            ],
+            auth_type=auth_type,
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
+        )
+
+        new_entity_collection_permissions = actions.parse_scope_specs_to_permissions(
+            collection_id=collection_id,
+            holder_type=update_request.holder_type,
+            holder_id=update_request.holder_id,
+            journal_scopes=response,
+        )
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return new_entity_collection_permissions
+
+
+@app.delete(
+    "/collections/{collection_id}/permissions",
+    tags=["main"],
+    response_model=data.EntityCollectionPermissionsResponse,
+)
+async def delete_entity_collection_permissions_handler(
+    request: Request,
+    collection_id: uuid.UUID = Path(...),
+    delete_request: data.EntityCollectionPermissions = Body(...),
+) -> data.EntityCollectionPermissionsResponse:
+    token = request.state.token
+    auth_type = request.state.auth_type
+
+    try:
+        response = bc.delete_journal_scopes(
+            token=token,
+            journal_id=collection_id,
+            holder_type=delete_request.holder_type,
+            holder_id=delete_request.holder_id,
+            permission_list=[
+                actions.parse_permission_naming(permission=p, to_entity=False)
+                for p in delete_request.permissions
+            ],
+            auth_type=auth_type,
+            headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
+        )
+
+        removed_entity_collection_permissions = (
+            actions.parse_scope_specs_to_permissions(
+                collection_id=collection_id,
+                holder_type=delete_request.holder_type,
+                holder_id=delete_request.holder_id,
+                journal_scopes=response,
+            )
+        )
+    except BugoutResponseException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logger.error(e)
+        raise HTTPException(status_code=500)
+
+    return removed_entity_collection_permissions
+
+
+@app.get(
+    "/collections/{collection_id}/search",
+    tags=["main"],
     response_model=data.EntitySearchResponse,
 )
 async def search_entity_handler(
@@ -383,19 +522,10 @@ async def search_entity_handler(
     token = request.state.token
     auth_type = request.state.auth_type
 
-    # Convert to regular journal search format
-    q = ""
-    cnt = len(required_field) + len(secondary_field)
-    for field in required_field:
-        q += f"tag:{str(field)}"
-        cnt -= 1
-        if cnt != 0:
-            q += " "
-    for field in secondary_field:
-        q += str(field)
-        cnt -= 1
-        if cnt != 0:
-            q += " "
+    q = actions.to_journal_search_format(
+        required_field=required_field,
+        secondary_field=secondary_field,
+    )
 
     try:
         response: BugoutSearchResults = bc.search(
@@ -438,7 +568,3 @@ async def search_entity_handler(
         raise HTTPException(status_code=500)
 
     return entities_response
-=======
-app.mount("/entity/public", public_app)
-app.mount("/entity", main_app)
->>>>>>> main

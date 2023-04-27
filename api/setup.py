@@ -12,10 +12,11 @@ setup(
     version=VERSION,
     packages=find_packages(),
     install_requires=[
-        "bugout>=0.2.3",
+        "bugout>=0.2.5",
         "fastapi",
         "psycopg2-binary",
         "pydantic",
+        "python-multipart",
         "sqlalchemy",
         "uvicorn",
         "web3login>=0.0.4",

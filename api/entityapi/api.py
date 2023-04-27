@@ -117,6 +117,7 @@ async def add_entity_collection_handler(
             headers={BUGOUT_APPLICATION_ID_HEADER: MOONSTREAM_APPLICATION_ID},
         )
     except BugoutResponseException as e:
+        logger.error(e)
         raise HTTPException(status_code=e.status_code, detail=e.detail)
     except Exception as e:
         logger.error(e)

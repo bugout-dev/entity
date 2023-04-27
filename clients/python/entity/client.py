@@ -1,6 +1,5 @@
 import uuid
 from typing import Any, Dict, List, Union, Optional
-
 import requests  # type: ignore
 
 from . import data, exceptions
@@ -158,7 +157,7 @@ class Entity:
             "blockchain": blockchain,
             "name": name,
             "required_fields": required_fields,
-            "secondary_fields": secondary_fields,
+            **secondary_fields,
         }
         result = self._call(
             method=data.Method.POST,
@@ -249,7 +248,7 @@ class Entity:
             "blockchain": blockchain,
             "name": name,
             "required_fields": required_fields,
-            "secondary_fields": secondary_fields,
+            **secondary_fields,
         }
         result = self._call(
             method=data.Method.PUT,
@@ -311,7 +310,7 @@ class Entity:
 
         result = self._call(
             method=data.Method.GET,
-            url=f"{self.api.endpoints[ENDPOINT_COLLECTIONS]}/{str(collection_id)}{self.api.endpoints[ENDPOINT_SEARCH]}",
+            url=f"{self.api.endpoints[ENDPOINT_COLLECTIONS]}/{str(collection_id)}{ENDPOINT_SEARCH}",
             headers=headers,
             timeout=timeout,
         )

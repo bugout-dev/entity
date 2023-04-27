@@ -1,7 +1,6 @@
 import uuid
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set, Union
-from datetime import date
 
 from pydantic import BaseModel, Extra, Field, root_validator
 

@@ -313,6 +313,7 @@ class Entity:
             url=f"{self.api.endpoints[ENDPOINT_COLLECTIONS]}/{str(collection_id)}{ENDPOINT_SEARCH}",
             headers=headers,
             timeout=timeout,
+            params=params,
         )
 
         return data.EntitySearchResponse(**result)

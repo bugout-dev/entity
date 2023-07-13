@@ -15,7 +15,7 @@ setup(
         "bugout>=0.2.5",
         "fastapi",
         "psycopg2-binary",
-        "pydantic",
+        "pydantic==1.10.2",
         "python-multipart",
         "sqlalchemy",
         "uvicorn",
